@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 from platform import system
+import ctypes
 
 import oracledb
 from flask import Flask, jsonify, request, send_from_directory
@@ -40,9 +41,16 @@ if INSTANT_CLIENT_DIR.exists():
     logger.info("Initializing Oracle thick mode from %s", INSTANT_CLIENT_DIR)
     try:
         if system() == "Windows":
-            os.environ["PATH"] = f"{INSTANT_CLIENT_DIR}{os.pathsep}{os.environ.get('PATH', '')}"
-            os.add_dll_directory(str(INSTANT_CLIENT_DIR))
-            oracledb.init_oracle_client()
+            def _get_short_path(path):
+                buffer = ctypes.create_unicode_buffer(260)
+                if ctypes.windll.kernel32.GetShortPathNameW(str(path), buffer, len(buffer)):
+                    return buffer.value
+                return str(path)
+
+            short_path = _get_short_path(INSTANT_CLIENT_DIR)
+            os.environ["PATH"] = f"{short_path}{os.pathsep}{os.environ.get('PATH', '')}"
+            os.add_dll_directory(short_path)
+            oracledb.init_oracle_client(lib_dir=short_path)
         else:
             oracledb.init_oracle_client(lib_dir=str(INSTANT_CLIENT_DIR))
     except Exception:
