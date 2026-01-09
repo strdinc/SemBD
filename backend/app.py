@@ -40,8 +40,7 @@ if INSTANT_CLIENT_DIR.exists():
     try:
         oracledb.init_oracle_client(lib_dir=str(INSTANT_CLIENT_DIR))
     except Exception:
-        logger.exception("Failed to initialize Oracle thick mode")
-        raise
+        logger.exception("Failed to initialize Oracle thick mode; continuing in thin mode")
 
 frontend_dist = BASE_DIR.parent / "frontend" / "dist"
 app = Flask(__name__, static_folder=str(frontend_dist), static_url_path="/")
