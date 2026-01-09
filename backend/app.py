@@ -1,38 +1,100 @@
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
+from platform import system
+import ctypes
 
 import oracledb
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def _create_pool():
     user = os.getenv("ORACLE_USER", "stud15")
-    password = os.getenv("ORACLE_PASSWORD", "stud15")
     dsn = os.getenv("ORACLE_DSN", "82.179.14.185:1521/nmics")
-    return oracledb.create_pool(user=user, password=password, dsn=dsn, min=1, max=4, increment=1)
+    logger.info("Creating Oracle pool for user=%s dsn=%s", user, dsn)
+    try:
+        password = os.getenv("ORACLE_PASSWORD", "stud15")
+        return oracledb.create_pool(
+            user=user,
+            password=password,
+            dsn=dsn,
+            min=1,
+            max=4,
+            increment=1,
+        )
+    except Exception:
+        logger.exception("Failed to create Oracle connection pool")
+        raise
 
 
-frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+BASE_DIR = Path(__file__).resolve().parent
+INSTANT_CLIENT_DIR = BASE_DIR / "instantclient_23_0"
+
+if INSTANT_CLIENT_DIR.exists():
+    logger.info("Initializing Oracle thick mode from %s", INSTANT_CLIENT_DIR)
+    try:
+        if system() == "Windows":
+            def _get_short_path(path):
+                buffer = ctypes.create_unicode_buffer(260)
+                if ctypes.windll.kernel32.GetShortPathNameW(str(path), buffer, len(buffer)):
+                    return buffer.value
+                return str(path)
+
+            short_path = _get_short_path(INSTANT_CLIENT_DIR)
+            os.environ["PATH"] = f"{short_path}{os.pathsep}{os.environ.get('PATH', '')}"
+            os.add_dll_directory(short_path)
+            oracledb.init_oracle_client(lib_dir=short_path)
+        else:
+            oracledb.init_oracle_client(lib_dir=str(INSTANT_CLIENT_DIR))
+    except Exception:
+        logger.exception("Failed to initialize Oracle thick mode; continuing in thin mode")
+
+frontend_dist = BASE_DIR.parent / "frontend" / "dist"
 app = Flask(__name__, static_folder=str(frontend_dist), static_url_path="/")
 CORS(app)
 pool = _create_pool()
 
 
 def _fetch_all(query, params=None):
-    with pool.acquire() as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(query, params or {})
-            columns = [col[0].lower() for col in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    logger.info("DB fetch: %s params=%s", query.strip().splitlines()[0], params or {})
+    try:
+        with pool.acquire() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, params or {})
+                columns = [col[0].lower() for col in cursor.description]
+                rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                logger.info("DB fetch returned %s rows", len(rows))
+                return rows
+    except Exception:
+        logger.exception("DB fetch failed")
+        raise
 
 
 def _call_proc(proc_name, params):
-    with pool.acquire() as connection:
-        with connection.cursor() as cursor:
-            cursor.callproc(proc_name, params)
-            connection.commit()
+    logger.info("DB call proc: %s params=%s", proc_name, params)
+    try:
+        with pool.acquire() as connection:
+            with connection.cursor() as cursor:
+                cursor.callproc(proc_name, params)
+                connection.commit()
+    except Exception:
+        logger.exception("DB procedure call failed")
+        raise
+
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    if isinstance(error, HTTPException):
+        return jsonify({"error": error.name, "message": error.description}), error.code
+    logger.exception("Unhandled error")
+    return jsonify({"error": "Internal Server Error", "message": str(error)}), 500
 
 
 @app.get("/api/stores")
