@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+from platform import system
 
 import oracledb
 from flask import Flask, jsonify, request, send_from_directory
@@ -38,7 +39,12 @@ INSTANT_CLIENT_DIR = BASE_DIR / "instantclient_23_0"
 if INSTANT_CLIENT_DIR.exists():
     logger.info("Initializing Oracle thick mode from %s", INSTANT_CLIENT_DIR)
     try:
-        oracledb.init_oracle_client(lib_dir=str(INSTANT_CLIENT_DIR))
+        if system() == "Windows":
+            os.environ["PATH"] = f"{INSTANT_CLIENT_DIR}{os.pathsep}{os.environ.get('PATH', '')}"
+            os.add_dll_directory(str(INSTANT_CLIENT_DIR))
+            oracledb.init_oracle_client()
+        else:
+            oracledb.init_oracle_client(lib_dir=str(INSTANT_CLIENT_DIR))
     except Exception:
         logger.exception("Failed to initialize Oracle thick mode; continuing in thin mode")
 
