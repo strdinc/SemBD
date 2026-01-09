@@ -7,9 +7,9 @@ from flask_cors import CORS
 
 
 def _create_pool():
-    user = os.getenv("ORACLE_USER", "system")
-    password = os.getenv("ORACLE_PASSWORD", "oracle")
-    dsn = os.getenv("ORACLE_DSN", "localhost/orclpdb1")
+    user = os.getenv("ORACLE_USER", "stud15")
+    password = os.getenv("ORACLE_PASSWORD", "stud15")
+    dsn = os.getenv("ORACLE_DSN", "82.179.14.185:1521/nmics")
     return oracledb.create_pool(user=user, password=password, dsn=dsn, min=1, max=4, increment=1)
 
 
