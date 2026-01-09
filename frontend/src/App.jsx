@@ -285,6 +285,22 @@ function App() {
                   Удалить
                 </Button>
               </Grid>
+              <Grid item xs={12}>
+                <Box className="table">
+                  <Box className="table-header">
+                    <span>ID</span>
+                    <span>ФИО</span>
+                    <span>Телефон</span>
+                  </Box>
+                  {customers.map((customer) => (
+                    <Box key={customer.customer_id} className="table-row">
+                      <span>{customer.customer_id}</span>
+                      <span>{customer.full_name}</span>
+                      <span>{customer.phone || '—'}</span>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
             </Grid>
           </CardContent>
         </Card>
@@ -356,6 +372,24 @@ function App() {
                 <Button color="error" variant="outlined" onClick={() => handleSellerAction('delete')}>
                   Удалить
                 </Button>
+              </Grid>
+              <Grid item xs={12}>
+                <Box className="table">
+                  <Box className="table-header">
+                    <span>ID</span>
+                    <span>ФИО</span>
+                    <span>Магазин</span>
+                    <span>ID магазина</span>
+                  </Box>
+                  {sellers.map((seller) => (
+                    <Box key={seller.seller_id} className="table-row">
+                      <span>{seller.seller_id}</span>
+                      <span>{seller.full_name}</span>
+                      <span>{seller.store_name}</span>
+                      <span>{seller.store_id}</span>
+                    </Box>
+                  ))}
+                </Box>
               </Grid>
             </Grid>
           </CardContent>
@@ -461,6 +495,26 @@ function App() {
                 <Button color="error" variant="outlined" onClick={() => handleSaleAction('delete')}>
                   Удалить
                 </Button>
+              </Grid>
+              <Grid item xs={12}>
+                <Box className="table">
+                  <Box className="table-header">
+                    <span>ID</span>
+                    <span>Дата</span>
+                    <span>Магазин</span>
+                    <span>Продавец</span>
+                    <span>Покупатель</span>
+                  </Box>
+                  {sales.map((sale) => (
+                    <Box key={sale.sale_id} className="table-row">
+                      <span>{sale.sale_id}</span>
+                      <span>{sale.sale_date}</span>
+                      <span>{sale.store_name}</span>
+                      <span>{sale.seller_name}</span>
+                      <span>{sale.customer_name}</span>
+                    </Box>
+                  ))}
+                </Box>
               </Grid>
             </Grid>
           </CardContent>
