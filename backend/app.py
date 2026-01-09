@@ -32,7 +32,18 @@ def _create_pool():
         raise
 
 
-frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+BASE_DIR = Path(__file__).resolve().parent
+INSTANT_CLIENT_DIR = BASE_DIR / "instantclient_23_0"
+
+if INSTANT_CLIENT_DIR.exists():
+    logger.info("Initializing Oracle thick mode from %s", INSTANT_CLIENT_DIR)
+    try:
+        oracledb.init_oracle_client(lib_dir=str(INSTANT_CLIENT_DIR))
+    except Exception:
+        logger.exception("Failed to initialize Oracle thick mode")
+        raise
+
+frontend_dist = BASE_DIR.parent / "frontend" / "dist"
 app = Flask(__name__, static_folder=str(frontend_dist), static_url_path="/")
 CORS(app)
 pool = _create_pool()
