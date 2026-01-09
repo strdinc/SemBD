@@ -22,6 +22,10 @@
   margin-top: 8px;
 }
 
+.sub-tabs {
+  margin-top: 8px;
+}
+
 .action-row {
   display: flex;
   gap: 12px;

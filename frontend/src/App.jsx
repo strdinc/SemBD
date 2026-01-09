@@ -65,6 +65,9 @@ function App() {
   const [customerForm, setCustomerForm] = useState(emptyCustomer)
   const [sellerForm, setSellerForm] = useState(emptySeller)
   const [saleForm, setSaleForm] = useState(emptySale)
+  const [customerActionTab, setCustomerActionTab] = useState('add')
+  const [sellerActionTab, setSellerActionTab] = useState('add')
+  const [saleActionTab, setSaleActionTab] = useState('add')
 
   const [logFilters, setLogFilters] = useState({
     from: '',
@@ -250,26 +253,37 @@ function App() {
         <Card className="section-card">
           <CardContent>
             <Typography variant="h6">Покупатели</Typography>
+            <Tabs
+              value={customerActionTab}
+              onChange={(_, value) => setCustomerActionTab(value)}
+              className="sub-tabs"
+            >
+              <Tab label="Добавление" value="add" />
+              <Tab label="Редактирование" value="update" />
+              <Tab label="Удаление" value="delete" />
+            </Tabs>
             <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={6}>
-                <Autocomplete
-                  options={customers}
-                  getOptionLabel={(option) => `${option.full_name} (#${option.customer_id})`}
-                  onChange={(_, value) => {
-                    if (value) {
-                      setCustomerForm({
-                        id: value.customer_id,
-                        name: value.full_name,
-                        phone: value.phone || '',
-                      })
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Выбор покупателя для редактирования" />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={2}>
+              {customerActionTab !== 'add' && (
+                <Grid item xs={12} md={6}>
+                  <Autocomplete
+                    options={customers}
+                    getOptionLabel={(option) => `${option.full_name} (#${option.customer_id})`}
+                    onChange={(_, value) => {
+                      if (value) {
+                        setCustomerForm({
+                          id: value.customer_id,
+                          name: value.full_name,
+                          phone: value.phone || '',
+                        })
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Выбор покупателя" />
+                    )}
+                  />
+                </Grid>
+              )}
+              <Grid item xs={12} md={customerActionTab === 'add' ? 2 : 4}>
                 <TextField
                   label="ID"
                   value={customerForm.id}
@@ -279,36 +293,46 @@ function App() {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="ФИО"
-                  value={customerForm.name}
-                  onChange={(event) =>
-                    setCustomerForm((prev) => ({ ...prev, name: event.target.value }))
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="Телефон"
-                  value={customerForm.phone}
-                  onChange={(event) =>
-                    setCustomerForm((prev) => ({ ...prev, phone: event.target.value }))
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={8} className="action-row">
-                <Button variant="contained" onClick={() => handleCustomerAction('add')}>
-                  Добавить
-                </Button>
-                <Button variant="outlined" onClick={() => handleCustomerAction('update')}>
-                  Обновить
-                </Button>
-                <Button color="error" variant="outlined" onClick={() => handleCustomerAction('delete')}>
-                  Удалить
-                </Button>
+              {customerActionTab !== 'delete' && (
+                <>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      label="ФИО"
+                      value={customerForm.name}
+                      onChange={(event) =>
+                        setCustomerForm((prev) => ({ ...prev, name: event.target.value }))
+                      }
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      label="Телефон"
+                      value={customerForm.phone}
+                      onChange={(event) =>
+                        setCustomerForm((prev) => ({ ...prev, phone: event.target.value }))
+                      }
+                      fullWidth
+                    />
+                  </Grid>
+                </>
+              )}
+              <Grid item xs={12} className="action-row">
+                {customerActionTab === 'add' && (
+                  <Button variant="contained" onClick={() => handleCustomerAction('add')}>
+                    Добавить
+                  </Button>
+                )}
+                {customerActionTab === 'update' && (
+                  <Button variant="outlined" onClick={() => handleCustomerAction('update')}>
+                    Обновить
+                  </Button>
+                )}
+                {customerActionTab === 'delete' && (
+                  <Button color="error" variant="outlined" onClick={() => handleCustomerAction('delete')}>
+                    Удалить
+                  </Button>
+                )}
               </Grid>
               <Grid item xs={12}>
                 <Box className="table">
@@ -335,26 +359,37 @@ function App() {
         <Card className="section-card">
           <CardContent>
             <Typography variant="h6">Продавцы</Typography>
+            <Tabs
+              value={sellerActionTab}
+              onChange={(_, value) => setSellerActionTab(value)}
+              className="sub-tabs"
+            >
+              <Tab label="Добавление" value="add" />
+              <Tab label="Редактирование" value="update" />
+              <Tab label="Удаление" value="delete" />
+            </Tabs>
             <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={6}>
-                <Autocomplete
-                  options={sellers}
-                  getOptionLabel={(option) => `${option.full_name} (#${option.seller_id})`}
-                  onChange={(_, value) => {
-                    if (value) {
-                      setSellerForm({
-                        id: value.seller_id,
-                        name: value.full_name,
-                        store_id: value.store_id,
-                      })
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Выбор продавца для редактирования" />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={2}>
+              {sellerActionTab !== 'add' && (
+                <Grid item xs={12} md={6}>
+                  <Autocomplete
+                    options={sellers}
+                    getOptionLabel={(option) => `${option.full_name} (#${option.seller_id})`}
+                    onChange={(_, value) => {
+                      if (value) {
+                        setSellerForm({
+                          id: value.seller_id,
+                          name: value.full_name,
+                          store_id: value.store_id,
+                        })
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Выбор продавца" />
+                    )}
+                  />
+                </Grid>
+              )}
+              <Grid item xs={12} md={sellerActionTab === 'add' ? 2 : 4}>
                 <TextField
                   label="ID"
                   value={sellerForm.id}
@@ -364,39 +399,51 @@ function App() {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="ФИО"
-                  value={sellerForm.name}
-                  onChange={(event) =>
-                    setSellerForm((prev) => ({ ...prev, name: event.target.value }))
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Autocomplete
-                  options={stores}
-                  getOptionLabel={(option) => `${option.store_name} (#${option.store_id})`}
-                  value={stores.find((store) => store.store_id === Number(sellerForm.store_id)) || null}
-                  onChange={(_, value) =>
-                    setSellerForm((prev) => ({ ...prev, store_id: value ? value.store_id : '' }))
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} label="Магазин" />
-                  )}
-                />
-              </Grid>
+              {sellerActionTab !== 'delete' && (
+                <>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      label="ФИО"
+                      value={sellerForm.name}
+                      onChange={(event) =>
+                        setSellerForm((prev) => ({ ...prev, name: event.target.value }))
+                      }
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Autocomplete
+                      options={stores}
+                      getOptionLabel={(option) => `${option.store_name} (#${option.store_id})`}
+                      value={
+                        stores.find((store) => store.store_id === Number(sellerForm.store_id)) || null
+                      }
+                      onChange={(_, value) =>
+                        setSellerForm((prev) => ({ ...prev, store_id: value ? value.store_id : '' }))
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} label="Магазин" />
+                      )}
+                    />
+                  </Grid>
+                </>
+              )}
               <Grid item xs={12} className="action-row">
-                <Button variant="contained" onClick={() => handleSellerAction('add')}>
-                  Добавить
-                </Button>
-                <Button variant="outlined" onClick={() => handleSellerAction('update')}>
-                  Обновить
-                </Button>
-                <Button color="error" variant="outlined" onClick={() => handleSellerAction('delete')}>
-                  Удалить
-                </Button>
+                {sellerActionTab === 'add' && (
+                  <Button variant="contained" onClick={() => handleSellerAction('add')}>
+                    Добавить
+                  </Button>
+                )}
+                {sellerActionTab === 'update' && (
+                  <Button variant="outlined" onClick={() => handleSellerAction('update')}>
+                    Обновить
+                  </Button>
+                )}
+                {sellerActionTab === 'delete' && (
+                  <Button color="error" variant="outlined" onClick={() => handleSellerAction('delete')}>
+                    Удалить
+                  </Button>
+                )}
               </Grid>
               <Grid item xs={12}>
                 <Box className="table">
@@ -425,28 +472,39 @@ function App() {
         <Card className="section-card">
           <CardContent>
             <Typography variant="h6">Продажи</Typography>
+            <Tabs
+              value={saleActionTab}
+              onChange={(_, value) => setSaleActionTab(value)}
+              className="sub-tabs"
+            >
+              <Tab label="Добавление" value="add" />
+              <Tab label="Редактирование" value="update" />
+              <Tab label="Удаление" value="delete" />
+            </Tabs>
             <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={6}>
-                <Autocomplete
-                  options={saleOptions}
-                  getOptionLabel={(option) => option.label}
-                  onChange={(_, value) => {
-                    if (value) {
-                      setSaleForm({
-                        id: value.sale_id,
-                        store_id: value.store_id,
-                        seller_id: value.seller_id,
-                        customer_id: value.customer_id,
-                        sale_date: value.sale_date,
-                      })
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Выбор продажи для редактирования" />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={2}>
+              {saleActionTab !== 'add' && (
+                <Grid item xs={12} md={6}>
+                  <Autocomplete
+                    options={saleOptions}
+                    getOptionLabel={(option) => option.label}
+                    onChange={(_, value) => {
+                      if (value) {
+                        setSaleForm({
+                          id: value.sale_id,
+                          store_id: value.store_id,
+                          seller_id: value.seller_id,
+                          customer_id: value.customer_id,
+                          sale_date: value.sale_date,
+                        })
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Выбор продажи" />
+                    )}
+                  />
+                </Grid>
+              )}
+              <Grid item xs={12} md={saleActionTab === 'add' ? 2 : 4}>
                 <TextField
                   label="ID"
                   value={saleForm.id}
@@ -456,70 +514,86 @@ function App() {
                   fullWidth
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  label="Дата"
-                  type="date"
-                  value={saleForm.sale_date}
-                  onChange={(event) =>
-                    setSaleForm((prev) => ({ ...prev, sale_date: event.target.value }))
-                  }
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Autocomplete
-                  options={stores}
-                  getOptionLabel={(option) => `${option.store_name} (#${option.store_id})`}
-                  value={stores.find((store) => store.store_id === Number(saleForm.store_id)) || null}
-                  onChange={(_, value) =>
-                    setSaleForm((prev) => ({ ...prev, store_id: value ? value.store_id : '' }))
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} label="Магазин" />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Autocomplete
-                  options={sellers}
-                  getOptionLabel={(option) => `${option.full_name} (#${option.seller_id})`}
-                  value={sellers.find((seller) => seller.seller_id === Number(saleForm.seller_id)) || null}
-                  onChange={(_, value) =>
-                    setSaleForm((prev) => ({ ...prev, seller_id: value ? value.seller_id : '' }))
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} label="Продавец" />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Autocomplete
-                  options={customers}
-                  getOptionLabel={(option) => `${option.full_name} (#${option.customer_id})`}
-                  value={
-                    customers.find((customer) => customer.customer_id === Number(saleForm.customer_id)) ||
-                    null
-                  }
-                  onChange={(_, value) =>
-                    setSaleForm((prev) => ({ ...prev, customer_id: value ? value.customer_id : '' }))
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} label="Покупатель" />
-                  )}
-                />
-              </Grid>
+              {saleActionTab !== 'delete' && (
+                <>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      label="Дата"
+                      type="date"
+                      value={saleForm.sale_date}
+                      onChange={(event) =>
+                        setSaleForm((prev) => ({ ...prev, sale_date: event.target.value }))
+                      }
+                      InputLabelProps={{ shrink: true }}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Autocomplete
+                      options={stores}
+                      getOptionLabel={(option) => `${option.store_name} (#${option.store_id})`}
+                      value={
+                        stores.find((store) => store.store_id === Number(saleForm.store_id)) || null
+                      }
+                      onChange={(_, value) =>
+                        setSaleForm((prev) => ({ ...prev, store_id: value ? value.store_id : '' }))
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} label="Магазин" />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Autocomplete
+                      options={sellers}
+                      getOptionLabel={(option) => `${option.full_name} (#${option.seller_id})`}
+                      value={
+                        sellers.find((seller) => seller.seller_id === Number(saleForm.seller_id)) ||
+                        null
+                      }
+                      onChange={(_, value) =>
+                        setSaleForm((prev) => ({ ...prev, seller_id: value ? value.seller_id : '' }))
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} label="Продавец" />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Autocomplete
+                      options={customers}
+                      getOptionLabel={(option) => `${option.full_name} (#${option.customer_id})`}
+                      value={
+                        customers.find(
+                          (customer) => customer.customer_id === Number(saleForm.customer_id)
+                        ) || null
+                      }
+                      onChange={(_, value) =>
+                        setSaleForm((prev) => ({ ...prev, customer_id: value ? value.customer_id : '' }))
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} label="Покупатель" />
+                      )}
+                    />
+                  </Grid>
+                </>
+              )}
               <Grid item xs={12} className="action-row">
-                <Button variant="contained" onClick={() => handleSaleAction('add')}>
-                  Добавить
-                </Button>
-                <Button variant="outlined" onClick={() => handleSaleAction('update')}>
-                  Обновить
-                </Button>
-                <Button color="error" variant="outlined" onClick={() => handleSaleAction('delete')}>
-                  Удалить
-                </Button>
+                {saleActionTab === 'add' && (
+                  <Button variant="contained" onClick={() => handleSaleAction('add')}>
+                    Добавить
+                  </Button>
+                )}
+                {saleActionTab === 'update' && (
+                  <Button variant="outlined" onClick={() => handleSaleAction('update')}>
+                    Обновить
+                  </Button>
+                )}
+                {saleActionTab === 'delete' && (
+                  <Button color="error" variant="outlined" onClick={() => handleSaleAction('delete')}>
+                    Удалить
+                  </Button>
+                )}
               </Grid>
               <Grid item xs={12}>
                 <Box className="table">
