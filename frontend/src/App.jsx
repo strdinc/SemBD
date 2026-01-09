@@ -81,17 +81,25 @@ function App() {
 
   const refreshAll = async () => {
     try {
+      console.log('[refreshAll] start')
       const [storesRes, customersRes, sellersRes, salesRes] = await Promise.all([
         fetchStores(),
         fetchCustomers(),
         fetchSellers(),
         fetchSales(),
       ])
+      console.log('[refreshAll] responses', {
+        stores: storesRes?.data,
+        customers: customersRes?.data,
+        sellers: sellersRes?.data,
+        sales: salesRes?.data,
+      })
       setStores(storesRes.data)
       setCustomers(customersRes.data)
       setSellers(sellersRes.data)
       setSales(salesRes.data)
     } catch (error) {
+      console.error('[refreshAll] failed', error)
       showMessage('Не удалось загрузить справочники', 'error')
     }
   }
@@ -108,17 +116,20 @@ function App() {
 
   const handleCustomerAction = async (action) => {
     try {
+      console.log('[customers] action', action, customerForm)
       await manageCustomer({ action, ...customerForm, id: Number(customerForm.id) })
       showMessage('Операция с покупателями выполнена')
       setCustomerForm(emptyCustomer)
       await refreshAll()
     } catch (error) {
+      console.error('[customers] action failed', error)
       showMessage('Ошибка при работе с покупателями', 'error')
     }
   }
 
   const handleSellerAction = async (action) => {
     try {
+      console.log('[sellers] action', action, sellerForm)
       await manageSeller({
         action,
         ...sellerForm,
@@ -129,12 +140,14 @@ function App() {
       setSellerForm(emptySeller)
       await refreshAll()
     } catch (error) {
+      console.error('[sellers] action failed', error)
       showMessage('Ошибка при работе с продавцами', 'error')
     }
   }
 
   const handleSaleAction = async (action) => {
     try {
+      console.log('[sales] action', action, saleForm)
       await manageSale({
         action,
         ...saleForm,
@@ -147,33 +160,40 @@ function App() {
       setSaleForm(emptySale)
       await refreshAll()
     } catch (error) {
+      console.error('[sales] action failed', error)
       showMessage('Ошибка при работе с продажами', 'error')
     }
   }
 
   const loadLogs = async () => {
     try {
+      console.log('[logs] load', logFilters)
       const response = await fetchLogs({
         from: logFilters.from || undefined,
         to: logFilters.to || undefined,
         op: logFilters.op || undefined,
         entity: logFilters.entity || undefined,
       })
+      console.log('[logs] response', response?.data)
       setLogs(response.data)
     } catch (error) {
+      console.error('[logs] failed', error)
       showMessage('Не удалось загрузить логи', 'error')
     }
   }
 
   const loadSummary = async () => {
     try {
+      console.log('[summary] load', summarySort)
       const response = await fetchLogSummary({
         sort_entity: summarySort.sort_entity ? 1 : 0,
         sort_op: summarySort.sort_op ? 1 : 0,
         sort_count: summarySort.sort_count ? 1 : 0,
       })
+      console.log('[summary] response', response?.data)
       setSummary(response.data)
     } catch (error) {
+      console.error('[summary] failed', error)
       showMessage('Не удалось загрузить сводку', 'error')
     }
   }
@@ -184,6 +204,7 @@ function App() {
       return
     }
     try {
+      console.log('[rollback] action', rollbackLogId)
       await rollbackLog({ log_id: rollbackLogId })
       showMessage('Откат выполнен')
       setRollbackLogId(null)
@@ -191,6 +212,7 @@ function App() {
       await loadLogs()
       await loadSummary()
     } catch (error) {
+      console.error('[rollback] failed', error)
       showMessage('Ошибка при откате', 'error')
     }
   }
