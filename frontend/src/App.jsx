@@ -100,7 +100,7 @@ function App() {
       setSales(salesRes.data)
     } catch (error) {
       console.error('[refreshAll] failed', error)
-      showMessage('Не удалось загрузить справочники', 'error')
+      showMessage(getErrorMessage(error, 'Не удалось загрузить справочники'), 'error')
     }
   }
 
@@ -114,6 +114,9 @@ function App() {
     setSnackbar({ open: true, message, severity })
   }
 
+  const getErrorMessage = (error, fallback) =>
+    error?.response?.data?.message || error?.message || fallback
+
   const handleCustomerAction = async (action) => {
     try {
       console.log('[customers] action', action, customerForm)
@@ -123,7 +126,7 @@ function App() {
       await refreshAll()
     } catch (error) {
       console.error('[customers] action failed', error)
-      showMessage('Ошибка при работе с покупателями', 'error')
+      showMessage(getErrorMessage(error, 'Ошибка при работе с покупателями'), 'error')
     }
   }
 
@@ -141,7 +144,7 @@ function App() {
       await refreshAll()
     } catch (error) {
       console.error('[sellers] action failed', error)
-      showMessage('Ошибка при работе с продавцами', 'error')
+      showMessage(getErrorMessage(error, 'Ошибка при работе с продавцами'), 'error')
     }
   }
 
@@ -161,7 +164,7 @@ function App() {
       await refreshAll()
     } catch (error) {
       console.error('[sales] action failed', error)
-      showMessage('Ошибка при работе с продажами', 'error')
+      showMessage(getErrorMessage(error, 'Ошибка при работе с продажами'), 'error')
     }
   }
 
@@ -178,7 +181,7 @@ function App() {
       setLogs(response.data)
     } catch (error) {
       console.error('[logs] failed', error)
-      showMessage('Не удалось загрузить логи', 'error')
+      showMessage(getErrorMessage(error, 'Не удалось загрузить логи'), 'error')
     }
   }
 
@@ -194,7 +197,7 @@ function App() {
       setSummary(response.data)
     } catch (error) {
       console.error('[summary] failed', error)
-      showMessage('Не удалось загрузить сводку', 'error')
+      showMessage(getErrorMessage(error, 'Не удалось загрузить сводку'), 'error')
     }
   }
 
@@ -213,7 +216,7 @@ function App() {
       await loadSummary()
     } catch (error) {
       console.error('[rollback] failed', error)
-      showMessage('Ошибка при откате', 'error')
+      showMessage(getErrorMessage(error, 'Ошибка при откате'), 'error')
     }
   }
 
