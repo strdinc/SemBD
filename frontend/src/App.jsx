@@ -697,59 +697,65 @@ function App() {
             </div>
             <span className="tag">LOGS</span>
           </div>
-          <div className="section-grid wide">
-            <label className="field">
-              <span>От</span>
-              <input
-                className="input"
-                type="date"
-                value={logFilters.from}
-                onChange={(event) =>
-                  setLogFilters((prev) => ({ ...prev, from: event.target.value }))
-                }
-              />
-            </label>
-            <label className="field">
-              <span>До</span>
-              <input
-                className="input"
-                type="date"
-                value={logFilters.to}
-                onChange={(event) => setLogFilters((prev) => ({ ...prev, to: event.target.value }))}
-              />
-            </label>
-            <label className="field">
-              <span>Операция</span>
-              <select
-                className="select"
-                value={logFilters.op}
-                onChange={(event) => setLogFilters((prev) => ({ ...prev, op: event.target.value }))}
-              >
-                <option value="">Все</option>
-                <option value="INSERT">INSERT</option>
-                <option value="UPDATE">UPDATE</option>
-                <option value="DELETE">DELETE</option>
-              </select>
-            </label>
-            <label className="field">
-              <span>Сущность</span>
-              <select
-                className="select"
-                value={logFilters.entity}
-                onChange={(event) =>
-                  setLogFilters((prev) => ({ ...prev, entity: event.target.value }))
-                }
-              >
-                <option value="">Все</option>
-                <option value="CUSTOMER">CUSTOMER</option>
-                <option value="SELLER">SELLER</option>
-                <option value="SALE">SALE</option>
-              </select>
-            </label>
-            <div className="action-row">
-              <button className="btn btn-primary" onClick={loadLogs}>
-                Обновить логи
-              </button>
+          <div className="section-grid">
+            <div className="controls-panel sticky-controls">
+              <label className="field">
+                <span>От</span>
+                <input
+                  className="input"
+                  type="date"
+                  value={logFilters.from}
+                  onChange={(event) =>
+                    setLogFilters((prev) => ({ ...prev, from: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>До</span>
+                <input
+                  className="input"
+                  type="date"
+                  value={logFilters.to}
+                  onChange={(event) =>
+                    setLogFilters((prev) => ({ ...prev, to: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>Операция</span>
+                <select
+                  className="select"
+                  value={logFilters.op}
+                  onChange={(event) =>
+                    setLogFilters((prev) => ({ ...prev, op: event.target.value }))
+                  }
+                >
+                  <option value="">Все</option>
+                  <option value="INSERT">INSERT</option>
+                  <option value="UPDATE">UPDATE</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Сущность</span>
+                <select
+                  className="select"
+                  value={logFilters.entity}
+                  onChange={(event) =>
+                    setLogFilters((prev) => ({ ...prev, entity: event.target.value }))
+                  }
+                >
+                  <option value="">Все</option>
+                  <option value="CUSTOMER">CUSTOMER</option>
+                  <option value="SELLER">SELLER</option>
+                  <option value="SALE">SALE</option>
+                </select>
+              </label>
+              <div className="action-row">
+                <button className="btn btn-primary" onClick={loadLogs}>
+                  Обновить логи
+                </button>
+              </div>
             </div>
             <div className="table-card">
               <div className="table-header">
@@ -782,41 +788,43 @@ function App() {
             </div>
             <span className="tag">SUMMARY</span>
           </div>
-          <div className="section-grid wide">
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={summarySort.sort_entity}
-                onChange={(event) =>
-                  setSummarySort((prev) => ({ ...prev, sort_entity: event.target.checked }))
-                }
-              />
-              <span>Сортировка по сущности</span>
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={summarySort.sort_op}
-                onChange={(event) =>
-                  setSummarySort((prev) => ({ ...prev, sort_op: event.target.checked }))
-                }
-              />
-              <span>Сортировка по операции</span>
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={summarySort.sort_count}
-                onChange={(event) =>
-                  setSummarySort((prev) => ({ ...prev, sort_count: event.target.checked }))
-                }
-              />
-              <span>Сортировка по количеству</span>
-            </label>
-            <div className="action-row">
-              <button className="btn btn-primary" onClick={loadSummary}>
-                Получить сводку
-              </button>
+          <div className="section-grid">
+            <div className="controls-panel sticky-controls">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={summarySort.sort_entity}
+                  onChange={(event) =>
+                    setSummarySort((prev) => ({ ...prev, sort_entity: event.target.checked }))
+                  }
+                />
+                <span>Сортировка по сущности</span>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={summarySort.sort_op}
+                  onChange={(event) =>
+                    setSummarySort((prev) => ({ ...prev, sort_op: event.target.checked }))
+                  }
+                />
+                <span>Сортировка по операции</span>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={summarySort.sort_count}
+                  onChange={(event) =>
+                    setSummarySort((prev) => ({ ...prev, sort_count: event.target.checked }))
+                  }
+                />
+                <span>Сортировка по количеству</span>
+              </label>
+              <div className="action-row">
+                <button className="btn btn-primary" onClick={loadSummary}>
+                  Получить сводку
+                </button>
+              </div>
             </div>
             <div className="table-card">
               <div className="table-header">
