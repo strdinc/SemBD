@@ -1,25 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  Alert,
-  Autocomplete,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Checkbox,
-  Divider,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  Snackbar,
-  Tab,
-  Tabs,
-  TextField,
-  Typography,
-} from '@mui/material'
-import {
   fetchCustomers,
   fetchLogSummary,
   fetchLogs,
@@ -81,6 +61,16 @@ function App() {
     sort_count: false,
   })
   const [rollbackLogId, setRollbackLogId] = useState(null)
+
+  useEffect(() => {
+    if (!snackbar.open) {
+      return undefined
+    }
+    const timer = setTimeout(() => {
+      setSnackbar((prev) => ({ ...prev, open: false }))
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [snackbar.open])
 
   const refreshAll = async () => {
     try {
@@ -233,644 +223,676 @@ function App() {
   )
 
   return (
-    <Box className="app-shell">
-      <Box className="app-header">
-        <Typography variant="h4">SEM_PKG GUI</Typography>
-        <Typography color="text.secondary">
-          Графический доступ к процедурам и журналу аудита.
-        </Typography>
-      </Box>
+    <div className="app-shell">
+      <header className="app-header">
+        <div>
+          <p className="eyebrow">SEM_PKG</p>
+          <h1>Панель управления</h1>
+          <p className="subtitle">Современный интерфейс для процедур и журналов аудита.</p>
+        </div>
+        <div className="header-actions">
+          <button className="btn btn-ghost" type="button" onClick={refreshAll}>
+            Обновить данные
+          </button>
+          <div className="status-pill">
+            <span className="status-dot" />
+            <span>Онлайн</span>
+          </div>
+        </div>
+      </header>
 
-      <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)}>
+      <div className="tabs">
         {tabs.map((tab) => (
-          <Tab key={tab.value} label={tab.label} value={tab.value} />
+          <button
+            key={tab.value}
+            type="button"
+            className={`tab-button ${activeTab === tab.value ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.value)}
+          >
+            {tab.label}
+          </button>
         ))}
-      </Tabs>
+      </div>
 
-      <Divider className="section-divider" />
+      <div className="section-divider" />
 
       {activeTab === 'customers' && (
-        <Card className="section-card">
-          <CardContent>
-            <Typography variant="h6">Покупатели</Typography>
-            <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={4}>
-                <Box className="action-panel">
-                  <Tabs
-                    value={customerActionTab}
-                    onChange={(_, value) => setCustomerActionTab(value)}
-                    className="sub-tabs"
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <h2>Покупатели</h2>
+              <p>Управление карточками покупателей и контактами.</p>
+            </div>
+            <span className="tag">CLIENTS</span>
+          </div>
+          <div className="section-grid">
+            <div className="action-panel">
+              <div className="sub-tabs">
+                {['add', 'update', 'delete'].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`tab-button ${customerActionTab === value ? 'active' : ''}`}
+                    onClick={() => setCustomerActionTab(value)}
                   >
-                    <Tab label="Добавление" value="add" />
-                    <Tab label="Редактирование" value="update" />
-                    <Tab label="Удаление" value="delete" />
-                  </Tabs>
-                  <Grid container spacing={2}>
-                    {customerActionTab !== 'add' && (
-                      <Grid item xs={12}>
-                        <Autocomplete
-                          options={customers}
-                          getOptionLabel={(option) => `${option.full_name} (#${option.customer_id})`}
-                          onChange={(_, value) => {
-                            if (value) {
-                              setCustomerForm({
-                                id: value.customer_id,
-                                name: value.full_name,
-                                phone: value.phone || '',
-                              })
-                            }
-                          }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Выбор покупателя" />
-                          )}
-                        />
-                      </Grid>
-                    )}
-                    {customerActionTab !== 'add' && (
-                      <Grid item xs={12}>
-                        <TextField
-                          label="ID"
-                          value={customerForm.id}
-                          onChange={(event) =>
-                            setCustomerForm((prev) => ({ ...prev, id: event.target.value }))
-                          }
-                          fullWidth
-                        />
-                      </Grid>
-                    )}
-                    {customerActionTab !== 'delete' && (
-                      <>
-                        <Grid item xs={12}>
-                          <TextField
-                            label="ФИО"
-                            value={customerForm.name}
-                            onChange={(event) =>
-                              setCustomerForm((prev) => ({ ...prev, name: event.target.value }))
-                            }
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <TextField
-                            label="Телефон"
-                            value={customerForm.phone}
-                            onChange={(event) =>
-                              setCustomerForm((prev) => ({ ...prev, phone: event.target.value }))
-                            }
-                            fullWidth
-                          />
-                        </Grid>
-                      </>
-                    )}
-                    <Grid item xs={12}>
-                      <Box className="action-buttons">
-                        {customerActionTab === 'add' && (
-                          <Button variant="contained" onClick={() => handleCustomerAction('add')}>
-                            Добавить
-                          </Button>
-                        )}
-                        {customerActionTab === 'update' && (
-                          <Button variant="outlined" onClick={() => handleCustomerAction('update')}>
-                            Обновить
-                          </Button>
-                        )}
-                        {customerActionTab === 'delete' && (
-                          <Button
-                            color="error"
-                            variant="outlined"
-                            onClick={() => handleCustomerAction('delete')}
-                          >
-                            Удалить
-                          </Button>
-                        )}
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={8}>
-                <Box className="table">
-                  <Box className="table-header">
+                    {value === 'add' ? 'Добавление' : value === 'update' ? 'Редактирование' : 'Удаление'}
+                  </button>
+                ))}
+              </div>
+              <div className="form-grid">
+                {customerActionTab !== 'add' && (
+                  <label className="field">
+                    <span>Выбор покупателя</span>
+                    <select
+                      className="select"
+                      value={customerForm.id}
+                      onChange={(event) => {
+                        const selected = customers.find(
+                          (customer) => customer.customer_id === Number(event.target.value)
+                        )
+                        if (selected) {
+                          setCustomerForm({
+                            id: selected.customer_id,
+                            name: selected.full_name,
+                            phone: selected.phone || '',
+                          })
+                        }
+                      }}
+                    >
+                      <option value="">Выберите покупателя</option>
+                      {customers.map((customer) => (
+                        <option key={customer.customer_id} value={customer.customer_id}>
+                          {customer.full_name} (#{customer.customer_id})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {customerActionTab !== 'add' && (
+                  <label className="field">
                     <span>ID</span>
-                    <span>ФИО</span>
-                    <span>Телефон</span>
-                  </Box>
-                  {customers.map((customer) => (
-                    <Box key={customer.customer_id} className="table-row">
-                      <span>{customer.customer_id}</span>
-                      <span>{customer.full_name}</span>
-                      <span>{customer.phone || '—'}</span>
-                    </Box>
-                  ))}
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+                    <input
+                      className="input"
+                      value={customerForm.id}
+                      onChange={(event) =>
+                        setCustomerForm((prev) => ({ ...prev, id: event.target.value }))
+                      }
+                    />
+                  </label>
+                )}
+                {customerActionTab !== 'delete' && (
+                  <>
+                    <label className="field">
+                      <span>ФИО</span>
+                      <input
+                        className="input"
+                        value={customerForm.name}
+                        onChange={(event) =>
+                          setCustomerForm((prev) => ({ ...prev, name: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Телефон</span>
+                      <input
+                        className="input"
+                        value={customerForm.phone}
+                        onChange={(event) =>
+                          setCustomerForm((prev) => ({ ...prev, phone: event.target.value }))
+                        }
+                      />
+                    </label>
+                  </>
+                )}
+                <div className="action-buttons">
+                  {customerActionTab === 'add' && (
+                    <button className="btn btn-primary" onClick={() => handleCustomerAction('add')}>
+                      Добавить
+                    </button>
+                  )}
+                  {customerActionTab === 'update' && (
+                    <button className="btn btn-secondary" onClick={() => handleCustomerAction('update')}>
+                      Обновить
+                    </button>
+                  )}
+                  {customerActionTab === 'delete' && (
+                    <button className="btn btn-danger" onClick={() => handleCustomerAction('delete')}>
+                      Удалить
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="table-card">
+              <div className="table-header">
+                <span>ID</span>
+                <span>ФИО</span>
+                <span>Телефон</span>
+              </div>
+              {customers.map((customer) => (
+                <div key={customer.customer_id} className="table-row">
+                  <span>{customer.customer_id}</span>
+                  <span>{customer.full_name}</span>
+                  <span>{customer.phone || '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {activeTab === 'sellers' && (
-        <Card className="section-card">
-          <CardContent>
-            <Typography variant="h6">Продавцы</Typography>
-            <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={4}>
-                <Box className="action-panel">
-                  <Tabs
-                    value={sellerActionTab}
-                    onChange={(_, value) => setSellerActionTab(value)}
-                    className="sub-tabs"
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <h2>Продавцы</h2>
+              <p>Управление сотрудниками и их привязкой к магазинам.</p>
+            </div>
+            <span className="tag">SALES TEAM</span>
+          </div>
+          <div className="section-grid">
+            <div className="action-panel">
+              <div className="sub-tabs">
+                {['add', 'update', 'delete'].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`tab-button ${sellerActionTab === value ? 'active' : ''}`}
+                    onClick={() => setSellerActionTab(value)}
                   >
-                    <Tab label="Добавление" value="add" />
-                    <Tab label="Редактирование" value="update" />
-                    <Tab label="Удаление" value="delete" />
-                  </Tabs>
-                  <Grid container spacing={2}>
-                    {sellerActionTab !== 'add' && (
-                      <Grid item xs={12}>
-                        <Autocomplete
-                          options={sellers}
-                          getOptionLabel={(option) => `${option.full_name} (#${option.seller_id})`}
-                          onChange={(_, value) => {
-                            if (value) {
-                              setSellerForm({
-                                id: value.seller_id,
-                                name: value.full_name,
-                                store_id: value.store_id,
-                              })
-                            }
-                          }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Выбор продавца" />
-                          )}
-                        />
-                      </Grid>
-                    )}
-                    {sellerActionTab !== 'add' && (
-                      <Grid item xs={12}>
-                        <TextField
-                          label="ID"
-                          value={sellerForm.id}
-                          onChange={(event) =>
-                            setSellerForm((prev) => ({ ...prev, id: event.target.value }))
-                          }
-                          fullWidth
-                        />
-                      </Grid>
-                    )}
-                    {sellerActionTab !== 'delete' && (
-                      <>
-                        <Grid item xs={12}>
-                          <TextField
-                            label="ФИО"
-                            value={sellerForm.name}
-                            onChange={(event) =>
-                              setSellerForm((prev) => ({ ...prev, name: event.target.value }))
-                            }
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Autocomplete
-                            options={stores}
-                            getOptionLabel={(option) => `${option.store_name} (#${option.store_id})`}
-                            value={
-                              stores.find((store) => store.store_id === Number(sellerForm.store_id)) ||
-                              null
-                            }
-                            onChange={(_, value) =>
-                              setSellerForm((prev) => ({
-                                ...prev,
-                                store_id: value ? value.store_id : '',
-                              }))
-                            }
-                            renderInput={(params) => (
-                              <TextField {...params} label="Магазин" />
-                            )}
-                          />
-                        </Grid>
-                      </>
-                    )}
-                    <Grid item xs={12}>
-                      <Box className="action-buttons">
-                        {sellerActionTab === 'add' && (
-                          <Button variant="contained" onClick={() => handleSellerAction('add')}>
-                            Добавить
-                          </Button>
-                        )}
-                        {sellerActionTab === 'update' && (
-                          <Button variant="outlined" onClick={() => handleSellerAction('update')}>
-                            Обновить
-                          </Button>
-                        )}
-                        {sellerActionTab === 'delete' && (
-                          <Button
-                            color="error"
-                            variant="outlined"
-                            onClick={() => handleSellerAction('delete')}
-                          >
-                            Удалить
-                          </Button>
-                        )}
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={8}>
-                <Box className="table">
-                  <Box className="table-header">
+                    {value === 'add' ? 'Добавление' : value === 'update' ? 'Редактирование' : 'Удаление'}
+                  </button>
+                ))}
+              </div>
+              <div className="form-grid">
+                {sellerActionTab !== 'add' && (
+                  <label className="field">
+                    <span>Выбор продавца</span>
+                    <select
+                      className="select"
+                      value={sellerForm.id}
+                      onChange={(event) => {
+                        const selected = sellers.find(
+                          (seller) => seller.seller_id === Number(event.target.value)
+                        )
+                        if (selected) {
+                          setSellerForm({
+                            id: selected.seller_id,
+                            name: selected.full_name,
+                            store_id: selected.store_id,
+                          })
+                        }
+                      }}
+                    >
+                      <option value="">Выберите продавца</option>
+                      {sellers.map((seller) => (
+                        <option key={seller.seller_id} value={seller.seller_id}>
+                          {seller.full_name} (#{seller.seller_id})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {sellerActionTab !== 'add' && (
+                  <label className="field">
                     <span>ID</span>
-                    <span>ФИО</span>
-                    <span>Магазин</span>
-                    <span>ID магазина</span>
-                  </Box>
-                  {sellers.map((seller) => (
-                    <Box key={seller.seller_id} className="table-row">
-                      <span>{seller.seller_id}</span>
-                      <span>{seller.full_name}</span>
-                      <span>{seller.store_name}</span>
-                      <span>{seller.store_id}</span>
-                    </Box>
-                  ))}
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+                    <input
+                      className="input"
+                      value={sellerForm.id}
+                      onChange={(event) =>
+                        setSellerForm((prev) => ({ ...prev, id: event.target.value }))
+                      }
+                    />
+                  </label>
+                )}
+                {sellerActionTab !== 'delete' && (
+                  <>
+                    <label className="field">
+                      <span>ФИО</span>
+                      <input
+                        className="input"
+                        value={sellerForm.name}
+                        onChange={(event) =>
+                          setSellerForm((prev) => ({ ...prev, name: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Магазин</span>
+                      <select
+                        className="select"
+                        value={sellerForm.store_id}
+                        onChange={(event) =>
+                          setSellerForm((prev) => ({ ...prev, store_id: event.target.value }))
+                        }
+                      >
+                        <option value="">Выберите магазин</option>
+                        {stores.map((store) => (
+                          <option key={store.store_id} value={store.store_id}>
+                            {store.store_name} (#{store.store_id})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+                <div className="action-buttons">
+                  {sellerActionTab === 'add' && (
+                    <button className="btn btn-primary" onClick={() => handleSellerAction('add')}>
+                      Добавить
+                    </button>
+                  )}
+                  {sellerActionTab === 'update' && (
+                    <button className="btn btn-secondary" onClick={() => handleSellerAction('update')}>
+                      Обновить
+                    </button>
+                  )}
+                  {sellerActionTab === 'delete' && (
+                    <button className="btn btn-danger" onClick={() => handleSellerAction('delete')}>
+                      Удалить
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="table-card">
+              <div className="table-header">
+                <span>ID</span>
+                <span>ФИО</span>
+                <span>Магазин</span>
+                <span>ID магазина</span>
+              </div>
+              {sellers.map((seller) => (
+                <div key={seller.seller_id} className="table-row">
+                  <span>{seller.seller_id}</span>
+                  <span>{seller.full_name}</span>
+                  <span>{seller.store_name}</span>
+                  <span>{seller.store_id}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {activeTab === 'sales' && (
-        <Card className="section-card">
-          <CardContent>
-            <Typography variant="h6">Продажи</Typography>
-            <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={4}>
-                <Box className="action-panel">
-                  <Tabs
-                    value={saleActionTab}
-                    onChange={(_, value) => setSaleActionTab(value)}
-                    className="sub-tabs"
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <h2>Продажи</h2>
+              <p>Контроль продаж и управление сделками.</p>
+            </div>
+            <span className="tag">SALES</span>
+          </div>
+          <div className="section-grid">
+            <div className="action-panel">
+              <div className="sub-tabs">
+                {['add', 'update', 'delete'].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`tab-button ${saleActionTab === value ? 'active' : ''}`}
+                    onClick={() => setSaleActionTab(value)}
                   >
-                    <Tab label="Добавление" value="add" />
-                    <Tab label="Редактирование" value="update" />
-                    <Tab label="Удаление" value="delete" />
-                  </Tabs>
-                  <Grid container spacing={2}>
-                    {saleActionTab !== 'add' && (
-                      <Grid item xs={12}>
-                        <Autocomplete
-                          options={saleOptions}
-                          getOptionLabel={(option) => option.label}
-                          onChange={(_, value) => {
-                            if (value) {
-                              setSaleForm({
-                                id: value.sale_id,
-                                store_id: value.store_id,
-                                seller_id: value.seller_id,
-                                customer_id: value.customer_id,
-                                sale_date: value.sale_date,
-                              })
-                            }
-                          }}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Выбор продажи" />
-                          )}
-                        />
-                      </Grid>
-                    )}
-                    {saleActionTab !== 'add' && (
-                      <Grid item xs={12}>
-                        <TextField
-                          label="ID"
-                          value={saleForm.id}
-                          onChange={(event) =>
-                            setSaleForm((prev) => ({ ...prev, id: event.target.value }))
-                          }
-                          fullWidth
-                        />
-                      </Grid>
-                    )}
-                    {saleActionTab !== 'delete' && (
-                      <>
-                        <Grid item xs={12}>
-                          <TextField
-                            label="Дата"
-                            type="date"
-                            value={saleForm.sale_date}
-                            onChange={(event) =>
-                              setSaleForm((prev) => ({ ...prev, sale_date: event.target.value }))
-                            }
-                            InputLabelProps={{ shrink: true }}
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Autocomplete
-                            options={stores}
-                            getOptionLabel={(option) => `${option.store_name} (#${option.store_id})`}
-                            value={
-                              stores.find((store) => store.store_id === Number(saleForm.store_id)) ||
-                              null
-                            }
-                            onChange={(_, value) =>
-                              setSaleForm((prev) => ({
-                                ...prev,
-                                store_id: value ? value.store_id : '',
-                              }))
-                            }
-                            renderInput={(params) => (
-                              <TextField {...params} label="Магазин" />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Autocomplete
-                            options={sellers}
-                            getOptionLabel={(option) => `${option.full_name} (#${option.seller_id})`}
-                            value={
-                              sellers.find((seller) => seller.seller_id === Number(saleForm.seller_id)) ||
-                              null
-                            }
-                            onChange={(_, value) =>
-                              setSaleForm((prev) => ({
-                                ...prev,
-                                seller_id: value ? value.seller_id : '',
-                              }))
-                            }
-                            renderInput={(params) => (
-                              <TextField {...params} label="Продавец" />
-                            )}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Autocomplete
-                            options={customers}
-                            getOptionLabel={(option) => `${option.full_name} (#${option.customer_id})`}
-                            value={
-                              customers.find(
-                                (customer) => customer.customer_id === Number(saleForm.customer_id)
-                              ) || null
-                            }
-                            onChange={(_, value) =>
-                              setSaleForm((prev) => ({
-                                ...prev,
-                                customer_id: value ? value.customer_id : '',
-                              }))
-                            }
-                            renderInput={(params) => (
-                              <TextField {...params} label="Покупатель" />
-                            )}
-                          />
-                        </Grid>
-                      </>
-                    )}
-                    <Grid item xs={12}>
-                      <Box className="action-buttons">
-                        {saleActionTab === 'add' && (
-                          <Button variant="contained" onClick={() => handleSaleAction('add')}>
-                            Добавить
-                          </Button>
-                        )}
-                        {saleActionTab === 'update' && (
-                          <Button variant="outlined" onClick={() => handleSaleAction('update')}>
-                            Обновить
-                          </Button>
-                        )}
-                        {saleActionTab === 'delete' && (
-                          <Button
-                            color="error"
-                            variant="outlined"
-                            onClick={() => handleSaleAction('delete')}
-                          >
-                            Удалить
-                          </Button>
-                        )}
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={8}>
-                <Box className="table">
-                  <Box className="table-header">
+                    {value === 'add' ? 'Добавление' : value === 'update' ? 'Редактирование' : 'Удаление'}
+                  </button>
+                ))}
+              </div>
+              <div className="form-grid">
+                {saleActionTab !== 'add' && (
+                  <label className="field">
+                    <span>Выбор продажи</span>
+                    <select
+                      className="select"
+                      value={saleForm.id}
+                      onChange={(event) => {
+                        const selected = sales.find(
+                          (sale) => sale.sale_id === Number(event.target.value)
+                        )
+                        if (selected) {
+                          setSaleForm({
+                            id: selected.sale_id,
+                            store_id: selected.store_id,
+                            seller_id: selected.seller_id,
+                            customer_id: selected.customer_id,
+                            sale_date: selected.sale_date,
+                          })
+                        }
+                      }}
+                    >
+                      <option value="">Выберите продажу</option>
+                      {saleOptions.map((sale) => (
+                        <option key={sale.sale_id} value={sale.sale_id}>
+                          {sale.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {saleActionTab !== 'add' && (
+                  <label className="field">
                     <span>ID</span>
-                    <span>Дата</span>
-                    <span>Магазин</span>
-                    <span>Продавец</span>
-                    <span>Покупатель</span>
-                  </Box>
-                  {sales.map((sale) => (
-                    <Box key={sale.sale_id} className="table-row">
-                      <span>{sale.sale_id}</span>
-                      <span>{sale.sale_date}</span>
-                      <span>{sale.store_name}</span>
-                      <span>{sale.seller_name}</span>
-                      <span>{sale.customer_name}</span>
-                    </Box>
-                  ))}
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+                    <input
+                      className="input"
+                      value={saleForm.id}
+                      onChange={(event) =>
+                        setSaleForm((prev) => ({ ...prev, id: event.target.value }))
+                      }
+                    />
+                  </label>
+                )}
+                {saleActionTab !== 'delete' && (
+                  <>
+                    <label className="field">
+                      <span>Дата</span>
+                      <input
+                        className="input"
+                        type="date"
+                        value={saleForm.sale_date}
+                        onChange={(event) =>
+                          setSaleForm((prev) => ({ ...prev, sale_date: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Магазин</span>
+                      <select
+                        className="select"
+                        value={saleForm.store_id}
+                        onChange={(event) =>
+                          setSaleForm((prev) => ({ ...prev, store_id: event.target.value }))
+                        }
+                      >
+                        <option value="">Выберите магазин</option>
+                        {stores.map((store) => (
+                          <option key={store.store_id} value={store.store_id}>
+                            {store.store_name} (#{store.store_id})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>Продавец</span>
+                      <select
+                        className="select"
+                        value={saleForm.seller_id}
+                        onChange={(event) =>
+                          setSaleForm((prev) => ({ ...prev, seller_id: event.target.value }))
+                        }
+                      >
+                        <option value="">Выберите продавца</option>
+                        {sellers.map((seller) => (
+                          <option key={seller.seller_id} value={seller.seller_id}>
+                            {seller.full_name} (#{seller.seller_id})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>Покупатель</span>
+                      <select
+                        className="select"
+                        value={saleForm.customer_id}
+                        onChange={(event) =>
+                          setSaleForm((prev) => ({ ...prev, customer_id: event.target.value }))
+                        }
+                      >
+                        <option value="">Выберите покупателя</option>
+                        {customers.map((customer) => (
+                          <option key={customer.customer_id} value={customer.customer_id}>
+                            {customer.full_name} (#{customer.customer_id})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+                <div className="action-buttons">
+                  {saleActionTab === 'add' && (
+                    <button className="btn btn-primary" onClick={() => handleSaleAction('add')}>
+                      Добавить
+                    </button>
+                  )}
+                  {saleActionTab === 'update' && (
+                    <button className="btn btn-secondary" onClick={() => handleSaleAction('update')}>
+                      Обновить
+                    </button>
+                  )}
+                  {saleActionTab === 'delete' && (
+                    <button className="btn btn-danger" onClick={() => handleSaleAction('delete')}>
+                      Удалить
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="table-card">
+              <div className="table-header">
+                <span>ID</span>
+                <span>Дата</span>
+                <span>Магазин</span>
+                <span>Продавец</span>
+                <span>Покупатель</span>
+              </div>
+              {sales.map((sale) => (
+                <div key={sale.sale_id} className="table-row">
+                  <span>{sale.sale_id}</span>
+                  <span>{sale.sale_date}</span>
+                  <span>{sale.store_name}</span>
+                  <span>{sale.seller_name}</span>
+                  <span>{sale.customer_name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {activeTab === 'logs' && (
-        <Card className="section-card">
-          <CardContent>
-            <Typography variant="h6">Журнал операций</Typography>
-            <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={3}>
-                <TextField
-                  label="От"
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <h2>Журнал операций</h2>
+              <p>Фильтрация операций для аудита и диагностики.</p>
+            </div>
+            <span className="tag">LOGS</span>
+          </div>
+          <div className="section-grid">
+            <div className="controls-panel sticky-controls">
+              <label className="field">
+                <span>От</span>
+                <input
+                  className="input"
                   type="date"
                   value={logFilters.from}
                   onChange={(event) =>
                     setLogFilters((prev) => ({ ...prev, from: event.target.value }))
                   }
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
                 />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField
-                  label="До"
+              </label>
+              <label className="field">
+                <span>До</span>
+                <input
+                  className="input"
                   type="date"
                   value={logFilters.to}
                   onChange={(event) =>
                     setLogFilters((prev) => ({ ...prev, to: event.target.value }))
                   }
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
                 />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Операция</InputLabel>
-                  <Select
-                    value={logFilters.op}
-                    label="Операция"
-                    onChange={(event) =>
-                      setLogFilters((prev) => ({ ...prev, op: event.target.value }))
-                    }
-                  >
-                    <MenuItem value="">Все</MenuItem>
-                    <MenuItem value="INSERT">INSERT</MenuItem>
-                    <MenuItem value="UPDATE">UPDATE</MenuItem>
-                    <MenuItem value="DELETE">DELETE</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <FormControl fullWidth>
-                  <InputLabel>Сущность</InputLabel>
-                  <Select
-                    value={logFilters.entity}
-                    label="Сущность"
-                    onChange={(event) =>
-                      setLogFilters((prev) => ({ ...prev, entity: event.target.value }))
-                    }
-                  >
-                    <MenuItem value="">Все</MenuItem>
-                    <MenuItem value="CUSTOMER">CUSTOMER</MenuItem>
-                    <MenuItem value="SELLER">SELLER</MenuItem>
-                    <MenuItem value="SALE">SALE</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <Button variant="contained" onClick={loadLogs}>
+              </label>
+              <label className="field">
+                <span>Операция</span>
+                <select
+                  className="select"
+                  value={logFilters.op}
+                  onChange={(event) =>
+                    setLogFilters((prev) => ({ ...prev, op: event.target.value }))
+                  }
+                >
+                  <option value="">Все</option>
+                  <option value="INSERT">INSERT</option>
+                  <option value="UPDATE">UPDATE</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Сущность</span>
+                <select
+                  className="select"
+                  value={logFilters.entity}
+                  onChange={(event) =>
+                    setLogFilters((prev) => ({ ...prev, entity: event.target.value }))
+                  }
+                >
+                  <option value="">Все</option>
+                  <option value="CUSTOMER">CUSTOMER</option>
+                  <option value="SELLER">SELLER</option>
+                  <option value="SALE">SALE</option>
+                </select>
+              </label>
+              <div className="action-row">
+                <button className="btn btn-primary" onClick={loadLogs}>
                   Обновить логи
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Box className="table">
-                  <Box className="table-header">
-                    <span>ID</span>
-                    <span>Сущность</span>
-                    <span>PK</span>
-                    <span>Операция</span>
-                    <span>Дата</span>
-                  </Box>
-                  {logs.map((log) => (
-                    <Box key={log.log_id} className="table-row">
-                      <span>{log.log_id}</span>
-                      <span>{log.entity_name}</span>
-                      <span>{log.entity_pk}</span>
-                      <span>{log.operation}</span>
-                      <span>{log.operation_dt}</span>
-                    </Box>
-                  ))}
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+                </button>
+              </div>
+            </div>
+            <div className="table-card">
+              <div className="table-header">
+                <span>ID</span>
+                <span>Сущность</span>
+                <span>PK</span>
+                <span>Операция</span>
+                <span>Дата</span>
+              </div>
+              {logs.map((log) => (
+                <div key={log.log_id} className="table-row">
+                  <span>{log.log_id}</span>
+                  <span>{log.entity_name}</span>
+                  <span>{log.entity_pk}</span>
+                  <span>{log.operation}</span>
+                  <span>{log.operation_dt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {activeTab === 'summary' && (
-        <Card className="section-card">
-          <CardContent>
-            <Typography variant="h6">Сводка по журналу</Typography>
-            <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={4}>
-                <Box className="checkbox-row">
-                  <Checkbox
-                    checked={summarySort.sort_entity}
-                    onChange={(event) =>
-                      setSummarySort((prev) => ({ ...prev, sort_entity: event.target.checked }))
-                    }
-                  />
-                  <Typography>Сортировка по сущности</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Box className="checkbox-row">
-                  <Checkbox
-                    checked={summarySort.sort_op}
-                    onChange={(event) =>
-                      setSummarySort((prev) => ({ ...prev, sort_op: event.target.checked }))
-                    }
-                  />
-                  <Typography>Сортировка по операции</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Box className="checkbox-row">
-                  <Checkbox
-                    checked={summarySort.sort_count}
-                    onChange={(event) =>
-                      setSummarySort((prev) => ({ ...prev, sort_count: event.target.checked }))
-                    }
-                  />
-                  <Typography>Сортировка по количеству</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Button variant="contained" onClick={loadSummary}>
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <h2>Сводка по журналу</h2>
+              <p>Гибкая сортировка показателей активности.</p>
+            </div>
+            <span className="tag">SUMMARY</span>
+          </div>
+          <div className="section-grid">
+            <div className="controls-panel sticky-controls">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={summarySort.sort_entity}
+                  onChange={(event) =>
+                    setSummarySort((prev) => ({ ...prev, sort_entity: event.target.checked }))
+                  }
+                />
+                <span>Сортировка по сущности</span>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={summarySort.sort_op}
+                  onChange={(event) =>
+                    setSummarySort((prev) => ({ ...prev, sort_op: event.target.checked }))
+                  }
+                />
+                <span>Сортировка по операции</span>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={summarySort.sort_count}
+                  onChange={(event) =>
+                    setSummarySort((prev) => ({ ...prev, sort_count: event.target.checked }))
+                  }
+                />
+                <span>Сортировка по количеству</span>
+              </label>
+              <div className="action-row">
+                <button className="btn btn-primary" onClick={loadSummary}>
                   Получить сводку
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Box className="table">
-                  <Box className="table-header">
-                    <span>Сущность</span>
-                    <span>Операция</span>
-                    <span>Количество</span>
-                  </Box>
-                  {summary.map((row, index) => (
-                    <Box key={`${row.entity_name}-${row.operation}-${index}`} className="table-row">
-                      <span>{row.entity_name}</span>
-                      <span>{row.operation}</span>
-                      <span>{row.cnt}</span>
-                    </Box>
-                  ))}
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+                </button>
+              </div>
+            </div>
+            <div className="table-card">
+              <div className="table-header">
+                <span>Сущность</span>
+                <span>Операция</span>
+                <span>Количество</span>
+              </div>
+              {summary.map((row, index) => (
+                <div key={`${row.entity_name}-${row.operation}-${index}`} className="table-row">
+                  <span>{row.entity_name}</span>
+                  <span>{row.operation}</span>
+                  <span>{row.cnt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {activeTab === 'rollback' && (
-        <Card className="section-card">
-          <CardContent>
-            <Typography variant="h6">Откат по логу</Typography>
-            <Grid container spacing={3} className="section-grid">
-              <Grid item xs={12} md={8}>
-                <Autocomplete
-                  options={logs}
-                  getOptionLabel={(option) =>
-                    `#${option.log_id} · ${option.entity_name} · ${option.operation}`
-                  }
-                  value={logs.find((log) => log.log_id === rollbackLogId) || null}
-                  onChange={(_, value) => setRollbackLogId(value ? value.log_id : null)}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Запись журнала для отката" />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} md={4} className="action-row">
-                <Button color="warning" variant="contained" onClick={handleRollback}>
-                  Выполнить откат
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+        <section className="section-card">
+          <div className="section-header">
+            <div>
+              <h2>Откат по логу</h2>
+              <p>Безопасный откат выбранной операции из журнала.</p>
+            </div>
+            <span className="tag">ROLLBACK</span>
+          </div>
+          <div className="section-grid wide">
+            <label className="field">
+              <span>Запись журнала для отката</span>
+              <select
+                className="select"
+                value={rollbackLogId || ''}
+                onChange={(event) =>
+                  setRollbackLogId(event.target.value ? Number(event.target.value) : null)
+                }
+              >
+                <option value="">Выберите запись</option>
+                {logs.map((log) => (
+                  <option key={log.log_id} value={log.log_id}>
+                    #{log.log_id} · {log.entity_name} · {log.operation}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="action-row">
+              <button className="btn btn-warning" onClick={handleRollback}>
+                Выполнить откат
+              </button>
+            </div>
+          </div>
+        </section>
       )}
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-      >
-        <Alert severity={snackbar.severity} variant="filled">
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      {snackbar.open && (
+        <div className={`toast toast-${snackbar.severity}`}>
+          <span>{snackbar.message}</span>
+          <button
+            type="button"
+            className="toast-close"
+            onClick={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
