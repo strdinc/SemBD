@@ -324,7 +324,7 @@ def table_details(table_name):
     )
     if not tables:
         return jsonify({"error": "Table not found"}), 404
-    query = f"SELECT * FROM {table_name} FETCH FIRST 200 ROWS ONLY"
+    query = f"SELECT * FROM {table_name} WHERE ROWNUM <= 200"
     rows = _fetch_all(query)
     return jsonify({"table": table_name, "rows": rows})
 
