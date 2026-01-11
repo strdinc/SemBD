@@ -77,6 +77,30 @@ def _fetch_all(query, params=None):
         raise
 
 
+def _execute_sql(query):
+    logger.info("DB execute: %s", query.strip().splitlines()[0])
+    try:
+        with pool.acquire() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                if cursor.description:
+                    columns = [col[0].lower() for col in cursor.description]
+                    rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                    logger.info("DB execute returned %s rows", len(rows))
+                    return {
+                        "type": "select",
+                        "columns": columns,
+                        "rows": rows,
+                        "row_count": len(rows),
+                    }
+                connection.commit()
+                logger.info("DB execute affected %s rows", cursor.rowcount)
+                return {"type": "mutation", "row_count": cursor.rowcount}
+    except Exception:
+        logger.exception("DB execute failed")
+        raise
+
+
 def _call_proc(proc_name, params):
     logger.info("DB call proc: %s params=%s", proc_name, params)
     try:
@@ -283,6 +307,36 @@ def rollback_action():
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok"})
+
+
+@app.get("/api/tables")
+def list_tables():
+    rows = _fetch_all("SELECT TABLE_NAME FROM USER_TABLES ORDER BY TABLE_NAME")
+    return jsonify(rows)
+
+
+@app.get("/api/tables/<table_name>")
+def table_details(table_name):
+    table_name = table_name.upper()
+    tables = _fetch_all(
+        "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME = :table_name",
+        {"table_name": table_name},
+    )
+    if not tables:
+        return jsonify({"error": "Table not found"}), 404
+    query = f"SELECT * FROM {table_name} WHERE ROWNUM <= 200"
+    rows = _fetch_all(query)
+    return jsonify({"table": table_name, "rows": rows})
+
+
+@app.post("/api/sql")
+def run_sql():
+    payload = request.get_json(force=True)
+    query = (payload.get("query") or "").strip()
+    if not query:
+        return jsonify({"error": "Query is required"}), 400
+    result = _execute_sql(query)
+    return jsonify(result)
 
 
 @app.get("/")
