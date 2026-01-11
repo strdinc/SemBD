@@ -1,8 +1,3 @@
--- Учебный SQL-скрипт для Oracle: разворачивает схему «магазины → продавцы → продажи». 
--- Скрипт сам очищает окружение, создаёт таблицы, заполняет демо-данные,
--- добавляет CRUD-пакет, триггеры логирования и пакет инструментов лога.
--- Все объекты имеют префикс SEM_, чтобы не конфликтовать с другими схемами.
-
 SET DEFINE OFF;
 SET SERVEROUTPUT ON;
 
@@ -38,7 +33,7 @@ BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_ENTITY_LOG CASCADE CONSTRAINTS PURGE'; E
 PROMPT ===== 1) CREATE TABLES (BASE + LOG) =====
 
 -- SEM_STORE: справочник магазинов, используется продавцами и продажами.
--- STORE_ID — первичный ключ; STORE_NAME — человекочитаемое название.
+-- STORE_ID — первичный ключ; STORE_NAME —  название.
 CREATE TABLE SEM_STORE (
     STORE_ID   NUMBER PRIMARY KEY,
     STORE_NAME VARCHAR2(100) NOT NULL
