@@ -6,6 +6,7 @@ const api = axios.create({
 })
 
 // Запросы справочников и данных.
+// Каждый helper возвращает Promise от axios, чтобы компоненты могли await-ить ответ.
 export const fetchStores = () => api.get('/stores')
 export const fetchCustomers = () => api.get('/customers')
 export const fetchSellers = () => api.get('/sellers')
@@ -19,6 +20,7 @@ export const executeSql = (payload) => api.post('/sql', payload)
 export const fetchHealth = () => api.get('/health')
 
 // CRUD-операции для сущностей через пакет SEM_PKG_CORE_CRUD.
+// payload содержит action (add/update/delete) и поля формы.
 export const manageCustomer = (payload) => api.post('/customers', payload)
 export const manageSeller = (payload) => api.post('/sellers', payload)
 export const manageSale = (payload) => api.post('/sales', payload)
