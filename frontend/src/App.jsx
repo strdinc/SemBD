@@ -315,10 +315,6 @@ function App() {
       <header className="app-header">
         <div>
           <p className="eyebrow">SEM_PKG</p>
-          <h1>Панель данных Oracle</h1>
-          <p className="subtitle">
-            Подключайтесь к серверу, выполняйте запросы и управляйте процедурами в одном интерфейсе.
-          </p>
         </div>
         <div className="header-actions">
           {connected && (
@@ -338,11 +334,15 @@ function App() {
           <div className="section-header">
             <div>
               <h2>Подключение к серверу</h2>
-              <p>Укажите параметры Oracle и нажмите «Подключиться».</p>
+              <p style={{
+                  'display':'none'}}>Укажите параметры Oracle и нажмите «Подключиться».</p>
             </div>
             <span className="tag">CONNECT</span>
           </div>
-          <div className="connection-grid">
+          <div className="connection-grid"
+          style={{
+              'display':'none'
+          }}>
             <label className="field">
               <span>IP адрес</span>
               <input
@@ -394,6 +394,7 @@ function App() {
                 }
               />
             </label>
+          </div>
             <div className="connection-actions">
               <button
                 className="btn btn-primary"
@@ -405,7 +406,6 @@ function App() {
               </button>
               <p className="hint">Используются базовые параметры подключения по умолчанию.</p>
             </div>
-          </div>
         </section>
       ) : (
         <>
@@ -429,7 +429,6 @@ function App() {
               <div className="section-header">
                 <div>
                   <h2>SQL запрос</h2>
-                  <p>Введите запрос и получите результат в консоли ниже.</p>
                 </div>
                 <span className="tag">SQL</span>
               </div>
@@ -500,7 +499,6 @@ function App() {
               <div className="section-header">
                 <div>
                   <h2>Таблицы</h2>
-                  <p>Просматривайте полный список таблиц базы данных.</p>
                 </div>
                 <span className="tag">TABLES</span>
               </div>
@@ -583,7 +581,6 @@ function App() {
                   <div className="section-header">
                     <div>
                       <h2>Покупатели</h2>
-                      <p>Управление карточками покупателей и контактами.</p>
                     </div>
                     <span className="tag">CLIENTS</span>
                   </div>
@@ -721,7 +718,6 @@ function App() {
                   <div className="section-header">
                     <div>
                       <h2>Продавцы</h2>
-                      <p>Управление сотрудниками и их привязкой к магазинам.</p>
                     </div>
                     <span className="tag">SALES TEAM</span>
                   </div>
@@ -868,7 +864,6 @@ function App() {
                   <div className="section-header">
                     <div>
                       <h2>Продажи</h2>
-                      <p>Контроль продаж и управление сделками.</p>
                     </div>
                     <span className="tag">SALES</span>
                   </div>
@@ -1054,7 +1049,6 @@ function App() {
                   <div className="section-header">
                     <div>
                       <h2>Журнал операций</h2>
-                      <p>Фильтрация операций для аудита и диагностики.</p>
                     </div>
                     <span className="tag">LOGS</span>
                   </div>
@@ -1145,7 +1139,6 @@ function App() {
                   <div className="section-header">
                     <div>
                       <h2>Сводка по журналу</h2>
-                      <p>Гибкая сортировка показателей активности.</p>
                     </div>
                     <span className="tag">SUMMARY</span>
                   </div>
@@ -1213,7 +1206,6 @@ function App() {
                   <div className="section-header">
                     <div>
                       <h2>Откат по логу</h2>
-                      <p>Безопасный откат выбранной операции из журнала.</p>
                     </div>
                     <span className="tag">ROLLBACK</span>
                   </div>

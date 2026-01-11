@@ -240,12 +240,14 @@
   resize: vertical;
   background: #fff;
   color: #0f172a;
+    cursor: default;
 }
 
 .textarea:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    cursor: default;
 }
 
 .input:focus,
@@ -456,6 +458,10 @@
   color: inherit;
   font-size: 18px;
   cursor: pointer;
+}
+
+textarea, input {
+    cursor: default;
 }
 
 @media (max-width: 1024px) {
