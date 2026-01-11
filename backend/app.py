@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# Создаём пул подключений к Oracle с параметрами из переменных окружения.
 def _create_pool():
     user = os.getenv("ORACLE_USER", "stud15")
     dsn = os.getenv("ORACLE_DSN", "82.179.14.185:1521/nmics")
@@ -38,6 +39,7 @@ BASE_DIR = Path(__file__).resolve().parent
 INSTANT_CLIENT_DIR = BASE_DIR / "instantclient_23_0"
 
 if INSTANT_CLIENT_DIR.exists():
+    # Пытаемся включить thick-режим Oracle, если клиентская библиотека доступна.
     logger.info("Initializing Oracle thick mode from %s", INSTANT_CLIENT_DIR)
     try:
         if system() == "Windows":
@@ -62,6 +64,7 @@ CORS(app)
 pool = _create_pool()
 
 
+# Унифицированный helper для SELECT-запросов, возвращающий список словарей.
 def _fetch_all(query, params=None):
     logger.info("DB fetch: %s params=%s", query.strip().splitlines()[0], params or {})
     try:
@@ -77,6 +80,7 @@ def _fetch_all(query, params=None):
         raise
 
 
+# Унифицированный helper для выполнения произвольного SQL (SELECT или DML).
 def _execute_sql(query):
     logger.info("DB execute: %s", query.strip().splitlines()[0])
     try:
@@ -101,6 +105,7 @@ def _execute_sql(query):
         raise
 
 
+# Вызов хранимой процедуры с параметрами и коммитом транзакции.
 def _call_proc(proc_name, params):
     logger.info("DB call proc: %s params=%s", proc_name, params)
     try:
@@ -115,6 +120,7 @@ def _call_proc(proc_name, params):
 
 @app.errorhandler(Exception)
 def handle_exception(error):
+    # Централизованный обработчик ошибок для API.
     if isinstance(error, HTTPException):
         return jsonify({"error": error.name, "message": error.description}), error.code
     logger.exception("Unhandled error")
@@ -123,12 +129,14 @@ def handle_exception(error):
 
 @app.get("/api/stores")
 def list_stores():
+    # Возвращает список магазинов для справочника.
     rows = _fetch_all("SELECT STORE_ID, STORE_NAME FROM SEM_STORE ORDER BY STORE_ID")
     return jsonify(rows)
 
 
 @app.get("/api/customers")
 def list_customers():
+    # Возвращает список покупателей для справочника.
     rows = _fetch_all(
         "SELECT CUSTOMER_ID, FULL_NAME, PHONE FROM SEM_CUSTOMER ORDER BY CUSTOMER_ID"
     )
@@ -137,6 +145,7 @@ def list_customers():
 
 @app.get("/api/sellers")
 def list_sellers():
+    # Возвращает список продавцов с именем магазина.
     rows = _fetch_all(
         """
         SELECT s.SELLER_ID, s.FULL_NAME, s.STORE_ID, st.STORE_NAME
@@ -150,6 +159,7 @@ def list_sellers():
 
 @app.get("/api/sales")
 def list_sales():
+    # Возвращает список продаж с деталями по продавцу/покупателю/магазину.
     rows = _fetch_all(
         """
         SELECT sale.SALE_ID,
@@ -172,6 +182,7 @@ def list_sales():
 
 @app.post("/api/customers")
 def manage_customers():
+    # Обрабатывает CRUD-операции над покупателями через пакет SEM_PKG_CORE_CRUD.
     payload = request.get_json(force=True)
     action = payload.get("action")
     customer_id = payload.get("id")
@@ -192,6 +203,7 @@ def manage_customers():
 
 @app.post("/api/sellers")
 def manage_sellers():
+    # Обрабатывает CRUD-операции над продавцами через пакет SEM_PKG_CORE_CRUD.
     payload = request.get_json(force=True)
     action = payload.get("action")
     seller_id = payload.get("id")
@@ -212,6 +224,7 @@ def manage_sellers():
 
 @app.post("/api/sales")
 def manage_sales():
+    # CRUD-операции по продажам с приведением даты в формат Oracle.
     payload = request.get_json(force=True)
     action = payload.get("action")
     sale_id = payload.get("id")
@@ -242,6 +255,7 @@ def manage_sales():
 
 @app.get("/api/logs")
 def list_logs():
+    # Возвращает журнал изменений с фильтрами по параметрам запроса.
     params = {
         "from_date": request.args.get("from"),
         "to_date": request.args.get("to"),
@@ -270,6 +284,7 @@ def list_logs():
 
 @app.get("/api/logs/summary")
 def log_summary():
+    # Возвращает агрегированную сводку по журналу с динамической сортировкой.
     sort_entity = request.args.get("sort_entity") == "1"
     sort_op = request.args.get("sort_op") == "1"
     sort_count = request.args.get("sort_count") == "1"
@@ -298,6 +313,7 @@ def log_summary():
 
 @app.post("/api/logs/rollback")
 def rollback_action():
+    # Запускает откат операции по записи журнала.
     payload = request.get_json(force=True)
     log_id = payload.get("log_id")
     _call_proc("SEM_PKG_LOG_TOOLS.ROLLBACK_ACTION", [log_id])
@@ -306,17 +322,20 @@ def rollback_action():
 
 @app.get("/api/health")
 def health():
+    # Health-check для проверки доступности API.
     return jsonify({"status": "ok"})
 
 
 @app.get("/api/tables")
 def list_tables():
+    # Список пользовательских таблиц в схеме Oracle.
     rows = _fetch_all("SELECT TABLE_NAME FROM USER_TABLES ORDER BY TABLE_NAME")
     return jsonify(rows)
 
 
 @app.get("/api/tables/<table_name>")
 def table_details(table_name):
+    # Возвращает первые 200 строк указанной таблицы.
     table_name = table_name.upper()
     tables = _fetch_all(
         "SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME = :table_name",
@@ -331,6 +350,7 @@ def table_details(table_name):
 
 @app.post("/api/sql")
 def run_sql():
+    # Выполняет пользовательский SQL и возвращает результат или число изменённых строк.
     payload = request.get_json(force=True)
     query = (payload.get("query") or "").strip()
     if not query:
@@ -341,11 +361,13 @@ def run_sql():
 
 @app.get("/")
 def serve_index():
+    # Отдаёт главный HTML-файл фронтенда.
     return send_from_directory(app.static_folder, "index.html")
 
 
 @app.get("/<path:path>")
 def serve_static(path):
+    # Отдаёт статические файлы фронтенда или fallback на index.html.
     file_path = frontend_dist / path
     if file_path.exists():
         return send_from_directory(app.static_folder, path)
@@ -353,4 +375,5 @@ def serve_static(path):
 
 
 if __name__ == "__main__":
+    # Локальный запуск Flask-приложения.
     app.run(host="0.0.0.0", port=5000, debug=True)

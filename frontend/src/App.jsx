@@ -91,6 +91,7 @@ function App() {
   })
   const [rollbackLogId, setRollbackLogId] = useState(null)
 
+  // Автоматически скрываем уведомление через несколько секунд.
   useEffect(() => {
     if (!snackbar.open) {
       return undefined
@@ -101,13 +102,16 @@ function App() {
     return () => clearTimeout(timer)
   }, [snackbar.open])
 
+  // Показывает всплывающее сообщение для пользователя.
   const showMessage = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity })
   }
 
+  // Приводит ошибку к человекочитаемому виду.
   const getErrorMessage = (error, fallback) =>
     error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback
 
+  // Загружает все справочные данные (магазины, покупатели, продавцы, продажи).
   const refreshAll = async () => {
     try {
       console.log('[refreshAll] start')
@@ -133,6 +137,7 @@ function App() {
     }
   }
 
+  // Загружает журнал операций с фильтрами.
   const loadLogs = async () => {
     try {
       console.log('[logs] load', logFilters)
@@ -150,6 +155,7 @@ function App() {
     }
   }
 
+  // Загружает агрегированную сводку по журналу.
   const loadSummary = async () => {
     try {
       console.log('[summary] load', summarySort)
@@ -166,6 +172,7 @@ function App() {
     }
   }
 
+  // Запрашивает список таблиц схемы.
   const loadTables = async () => {
     try {
       const response = await fetchTables()
@@ -176,6 +183,7 @@ function App() {
     }
   }
 
+  // При подключении сразу загружаем все необходимые данные.
   useEffect(() => {
     if (!connected) {
       return
@@ -186,6 +194,7 @@ function App() {
     loadTables()
   }, [connected])
 
+  // Проверяет доступность сервера и переключает UI в состояние «подключено».
   const handleConnect = async () => {
     setConnecting(true)
     try {
@@ -201,6 +210,7 @@ function App() {
     }
   }
 
+  // Выполняет CRUD-операции над покупателями через API.
   const handleCustomerAction = async (action) => {
     try {
       console.log('[customers] action', action, customerForm)
@@ -214,6 +224,7 @@ function App() {
     }
   }
 
+  // Выполняет CRUD-операции над продавцами через API.
   const handleSellerAction = async (action) => {
     try {
       console.log('[sellers] action', action, sellerForm)
@@ -232,6 +243,7 @@ function App() {
     }
   }
 
+  // Выполняет CRUD-операции над продажами через API.
   const handleSaleAction = async (action) => {
     try {
       console.log('[sales] action', action, saleForm)
@@ -252,6 +264,7 @@ function App() {
     }
   }
 
+  // Выполняет откат записи из журнала.
   const handleRollback = async () => {
     if (!rollbackLogId) {
       showMessage('Выберите лог для отката', 'warning')
@@ -271,6 +284,7 @@ function App() {
     }
   }
 
+  // Запускает произвольный SQL-запрос из интерфейса.
   const handleSqlRun = async () => {
     if (!sqlQuery.trim()) {
       showMessage('Введите SQL запрос', 'warning')
@@ -286,6 +300,7 @@ function App() {
     }
   }
 
+  // Запрашивает данные выбранной таблицы и подготавливает отображение.
   const handleTableOpen = async (tableName) => {
     try {
       const response = await fetchTableData(tableName)
@@ -298,6 +313,7 @@ function App() {
     }
   }
 
+  // Готовим подписи для селекта с продажами.
   const saleOptions = useMemo(
     () =>
       sales.map((sale) => ({
