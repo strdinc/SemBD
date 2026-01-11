@@ -11,6 +11,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
