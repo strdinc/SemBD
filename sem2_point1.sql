@@ -1,18 +1,9 @@
--- ============================================================
--- BD2 SEMESTROVAYA / PUNKT 1
--- Один SQL-скрипт (Oracle 11g+), без файлов, просто вставил и запустил.
--- Фишки:
---  1) Все объекты с префиксом SEM_ (не конфликтуют с твоими PRODUCTS и т.п.)
---  2) Без IDENTITY (через SEQUENCE + trigger на LOG_ID)
---  3) 3 ключевые связанные таблицы: SEM_SELLER, SEM_CUSTOMER, SEM_SALE
---  4) CRUD package + triggers logging + log tools package (view/rollback/summary)
--- ============================================================
-
 SET DEFINE OFF;
 SET SERVEROUTPUT ON;
 
 PROMPT ===== 0) SAFE DROP (ignore errors) =====
 
+-- Поочерёдно удаляем объекты; ошибки игнорируем, чтобы скрипт был идемпотентным.
 BEGIN EXECUTE IMMEDIATE 'DROP TRIGGER SEM_TRG_ENTITY_LOG_ID'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'DROP TRIGGER SEM_TRG_SALE_LOG';       EXCEPTION WHEN OTHERS THEN NULL; END;
@@ -28,33 +19,36 @@ BEGIN EXECUTE IMMEDIATE 'DROP PACKAGE SEM_PKG_CORE_CRUD';      EXCEPTION WHEN OT
 BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEM_ENTITY_LOG_SEQ';    EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_SALE CASCADE CONSTRAINTS PURGE';     EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_SALE CASCADE CONSTRAINTS PURGE';       EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_SELLER CASCADE CONSTRAINTS PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_SELLER CASCADE CONSTRAINTS PURGE';     EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_CUSTOMER CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_CUSTOMER CASCADE CONSTRAINTS PURGE';   EXCEPTION WHEN OTHERS THEN NULL; END;
 /
-BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_STORE CASCADE CONSTRAINTS PURGE';    EXCEPTION WHEN OTHERS THEN NULL; END;
+BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_STORE CASCADE CONSTRAINTS PURGE';      EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 BEGIN EXECUTE IMMEDIATE 'DROP TABLE SEM_ENTITY_LOG CASCADE CONSTRAINTS PURGE'; EXCEPTION WHEN OTHERS THEN NULL; END;
 /
 
 PROMPT ===== 1) CREATE TABLES (BASE + LOG) =====
 
--- Нужна для связи (продавец принадлежит магазину, продажа -> магазин)
+-- SEM_STORE: справочник магазинов, используется продавцами и продажами.
+-- STORE_ID — первичный ключ; STORE_NAME —  название.
 CREATE TABLE SEM_STORE (
     STORE_ID   NUMBER PRIMARY KEY,
     STORE_NAME VARCHAR2(100) NOT NULL
 );
 
--- Ключевая сущность 1: покупатель
+-- SEM_CUSTOMER: справочник покупателей с именем и телефоном.
+-- PHONE не обязателен, чтобы допускать отсутствующие контакты.
 CREATE TABLE SEM_CUSTOMER (
     CUSTOMER_ID NUMBER PRIMARY KEY,
     FULL_NAME   VARCHAR2(100) NOT NULL,
     PHONE       VARCHAR2(20)
 );
 
--- Ключевая сущность 2: продавец
+-- SEM_SELLER: продавцы, каждый продавец принадлежит магазину.
+-- STORE_ID связан внешним ключом с SEM_STORE.
 CREATE TABLE SEM_SELLER (
     SELLER_ID NUMBER PRIMARY KEY,
     FULL_NAME VARCHAR2(100) NOT NULL,
@@ -63,7 +57,8 @@ CREATE TABLE SEM_SELLER (
         FOREIGN KEY (STORE_ID) REFERENCES SEM_STORE(STORE_ID)
 );
 
--- Ключевая сущность 3: продажа
+-- SEM_SALE: факты продаж — кто, где и когда совершил продажу.
+-- Внешние ключи фиксируют связи с магазином, продавцом и покупателем.
 CREATE TABLE SEM_SALE (
     SALE_ID     NUMBER PRIMARY KEY,
     STORE_ID    NUMBER NOT NULL,
@@ -78,21 +73,23 @@ CREATE TABLE SEM_SALE (
         FOREIGN KEY (CUSTOMER_ID) REFERENCES SEM_CUSTOMER(CUSTOMER_ID)
 );
 
--- Таблица лога (хранит до/после + дату + тип операции)
+-- SEM_ENTITY_LOG: журнал изменений для INSERT/UPDATE/DELETE.
+-- OLD_DATA и NEW_DATA хранят сериализованные данные в формате KEY=VALUE;.
 CREATE TABLE SEM_ENTITY_LOG (
     LOG_ID        NUMBER PRIMARY KEY,
     ENTITY_NAME   VARCHAR2(50)  NOT NULL,
     ENTITY_PK     VARCHAR2(100) NOT NULL,
-    OPERATION     VARCHAR2(10)  NOT NULL, -- INSERT/UPDATE/DELETE
+    OPERATION     VARCHAR2(10)  NOT NULL,
     OLD_DATA      CLOB,
     NEW_DATA      CLOB,
     OPERATION_DT  DATE DEFAULT SYSDATE NOT NULL
 );
 
+-- Индексы по времени операции и по типу сущности/операции.
 CREATE INDEX SEM_IX_LOG_DT   ON SEM_ENTITY_LOG(OPERATION_DT);
 CREATE INDEX SEM_IX_LOG_MAIN ON SEM_ENTITY_LOG(ENTITY_NAME, OPERATION);
 
--- SEQ + trigger для LOG_ID (чтобы работало на Oracle без IDENTITY)
+-- SEQUENCE + trigger формируют LOG_ID без IDENTITY (для Oracle 11g+).
 CREATE SEQUENCE SEM_ENTITY_LOG_SEQ START WITH 1 INCREMENT BY 1 NOCACHE;
 
 CREATE OR REPLACE TRIGGER SEM_TRG_ENTITY_LOG_ID
@@ -108,14 +105,13 @@ SHOW ERRORS;
 
 PROMPT ===== 2) INSERT DEMO DATA (5-10 rows) =====
 
--- STORES (5)
+-- Заполняем базовые справочники тестовыми значениями.
 INSERT INTO SEM_STORE VALUES (1, 'TechnoMart');
 INSERT INTO SEM_STORE VALUES (2, 'FreshFoods');
 INSERT INTO SEM_STORE VALUES (3, 'BookWorld');
 INSERT INTO SEM_STORE VALUES (4, 'SportZone');
 INSERT INTO SEM_STORE VALUES (5, 'Home&Kitchen');
 
--- CUSTOMERS (6)
 INSERT INTO SEM_CUSTOMER VALUES (1, 'Alice Johnson', '1234567890');
 INSERT INTO SEM_CUSTOMER VALUES (2, 'Bob Smith',     '0987654321');
 INSERT INTO SEM_CUSTOMER VALUES (3, 'Charlie Brown', '5551234567');
@@ -123,14 +119,12 @@ INSERT INTO SEM_CUSTOMER VALUES (4, 'Diana Prince',  '7778889999');
 INSERT INTO SEM_CUSTOMER VALUES (5, 'Ethan Hunt',    '9990001122');
 INSERT INTO SEM_CUSTOMER VALUES (6, 'Fiona Mills',   '2223334445');
 
--- SELLERS (5)
 INSERT INTO SEM_SELLER VALUES (1, 'Evan Torres',    1);
 INSERT INTO SEM_SELLER VALUES (2, 'Maria Hill',    2);
 INSERT INTO SEM_SELLER VALUES (3, 'Liam Davis',    3);
 INSERT INTO SEM_SELLER VALUES (4, 'Sophia Turner', 4);
 INSERT INTO SEM_SELLER VALUES (5, 'Noah Brooks',   5);
 
--- SALES (8)
 INSERT INTO SEM_SALE VALUES (1, 1, 1, 1, DATE '2024-04-01');
 INSERT INTO SEM_SALE VALUES (2, 2, 2, 2, DATE '2024-04-02');
 INSERT INTO SEM_SALE VALUES (3, 3, 3, 3, DATE '2024-04-03');
@@ -144,18 +138,19 @@ COMMIT;
 
 PROMPT ===== 3) CRUD PACKAGE (insert/update/delete for 3 entities) =====
 
+-- Пакет SEM_PKG_CORE_CRUD предоставляет API для CRUD по трём сущностям.
 CREATE OR REPLACE PACKAGE SEM_PKG_CORE_CRUD AS
-    -- SELLER
+    -- Продавцы.
     PROCEDURE ADD_SELLER(p_id NUMBER, p_name VARCHAR2, p_store_id NUMBER);
     PROCEDURE UPD_SELLER(p_id NUMBER, p_name VARCHAR2, p_store_id NUMBER);
     PROCEDURE DEL_SELLER(p_id NUMBER);
 
-    -- CUSTOMER
+    -- Покупатели.
     PROCEDURE ADD_CUSTOMER(p_id NUMBER, p_name VARCHAR2, p_phone VARCHAR2);
     PROCEDURE UPD_CUSTOMER(p_id NUMBER, p_name VARCHAR2, p_phone VARCHAR2);
     PROCEDURE DEL_CUSTOMER(p_id NUMBER);
 
-    -- SALE
+    -- Продажи.
     PROCEDURE ADD_SALE(p_id NUMBER, p_store_id NUMBER, p_seller_id NUMBER, p_customer_id NUMBER, p_date DATE);
     PROCEDURE UPD_SALE(p_id NUMBER, p_store_id NUMBER, p_seller_id NUMBER, p_customer_id NUMBER, p_date DATE);
     PROCEDURE DEL_SALE(p_id NUMBER);
@@ -164,12 +159,14 @@ END SEM_PKG_CORE_CRUD;
 SHOW ERRORS;
 
 CREATE OR REPLACE PACKAGE BODY SEM_PKG_CORE_CRUD AS
+    -- Вставка продавца с привязкой к магазину.
     PROCEDURE ADD_SELLER(p_id NUMBER, p_name VARCHAR2, p_store_id NUMBER) IS
     BEGIN
         INSERT INTO SEM_SELLER(SELLER_ID, FULL_NAME, STORE_ID)
         VALUES (p_id, p_name, p_store_id);
     END;
 
+    -- Обновление ФИО и магазина для продавца.
     PROCEDURE UPD_SELLER(p_id NUMBER, p_name VARCHAR2, p_store_id NUMBER) IS
     BEGIN
         UPDATE SEM_SELLER
@@ -178,17 +175,20 @@ CREATE OR REPLACE PACKAGE BODY SEM_PKG_CORE_CRUD AS
          WHERE SELLER_ID = p_id;
     END;
 
+    -- Удаление продавца по идентификатору.
     PROCEDURE DEL_SELLER(p_id NUMBER) IS
     BEGIN
         DELETE FROM SEM_SELLER WHERE SELLER_ID = p_id;
     END;
 
+    -- Вставка покупателя с контактным телефоном (если есть).
     PROCEDURE ADD_CUSTOMER(p_id NUMBER, p_name VARCHAR2, p_phone VARCHAR2) IS
     BEGIN
         INSERT INTO SEM_CUSTOMER(CUSTOMER_ID, FULL_NAME, PHONE)
         VALUES (p_id, p_name, p_phone);
     END;
 
+    -- Обновление профиля покупателя.
     PROCEDURE UPD_CUSTOMER(p_id NUMBER, p_name VARCHAR2, p_phone VARCHAR2) IS
     BEGIN
         UPDATE SEM_CUSTOMER
@@ -197,17 +197,20 @@ CREATE OR REPLACE PACKAGE BODY SEM_PKG_CORE_CRUD AS
          WHERE CUSTOMER_ID = p_id;
     END;
 
+    -- Удаление покупателя по ключу.
     PROCEDURE DEL_CUSTOMER(p_id NUMBER) IS
     BEGIN
         DELETE FROM SEM_CUSTOMER WHERE CUSTOMER_ID = p_id;
     END;
 
+    -- Добавление продажи: фиксируем участников и дату.
     PROCEDURE ADD_SALE(p_id NUMBER, p_store_id NUMBER, p_seller_id NUMBER, p_customer_id NUMBER, p_date DATE) IS
     BEGIN
         INSERT INTO SEM_SALE(SALE_ID, STORE_ID, SELLER_ID, CUSTOMER_ID, SALE_DATE)
         VALUES (p_id, p_store_id, p_seller_id, p_customer_id, p_date);
     END;
 
+    -- Обновление деталей продажи.
     PROCEDURE UPD_SALE(p_id NUMBER, p_store_id NUMBER, p_seller_id NUMBER, p_customer_id NUMBER, p_date DATE) IS
     BEGIN
         UPDATE SEM_SALE
@@ -218,6 +221,7 @@ CREATE OR REPLACE PACKAGE BODY SEM_PKG_CORE_CRUD AS
          WHERE SALE_ID = p_id;
     END;
 
+    -- Удаление продажи по идентификатору.
     PROCEDURE DEL_SALE(p_id NUMBER) IS
     BEGIN
         DELETE FROM SEM_SALE WHERE SALE_ID = p_id;
@@ -227,8 +231,9 @@ END SEM_PKG_CORE_CRUD;
 SHOW ERRORS;
 
 PROMPT ===== 4) TRIGGERS: AUTO-LOGGING for 3 entities =====
--- Лог формат: KEY=VALUE;KEY=VALUE;...  (чтоб потом откатывать)
 
+-- Триггеры записывают изменения в SEM_ENTITY_LOG.
+-- Для NEW_DATA и OLD_DATA используется формат KEY=VALUE;, удобный для отката.
 CREATE OR REPLACE TRIGGER SEM_TRG_SELLER_LOG
 BEFORE INSERT OR UPDATE OR DELETE ON SEM_SELLER
 FOR EACH ROW
@@ -316,7 +321,9 @@ SHOW ERRORS;
 
 PROMPT ===== 5) LOG TOOLS PACKAGE (view / rollback / summary) =====
 
+-- Пакет SEM_PKG_LOG_TOOLS выводит журнал, делает откат и строит сводки.
 CREATE OR REPLACE PACKAGE SEM_PKG_LOG_TOOLS AS
+    -- Печать журнала с фильтрами по датам, операции и сущности.
     PROCEDURE VIEW_LOG(
         p_from   DATE DEFAULT NULL,
         p_to     DATE DEFAULT NULL,
@@ -324,8 +331,10 @@ CREATE OR REPLACE PACKAGE SEM_PKG_LOG_TOOLS AS
         p_entity VARCHAR2 DEFAULT NULL
     );
 
+    -- Откат конкретной операции по LOG_ID.
     PROCEDURE ROLLBACK_ACTION(p_log_id NUMBER);
 
+    -- Сводный отчёт по журналу с управляемой сортировкой.
     PROCEDURE SUMMARY_REPORT(
         p_sort_entity BOOLEAN,
         p_sort_op     BOOLEAN,
@@ -337,7 +346,8 @@ SHOW ERRORS;
 
 CREATE OR REPLACE PACKAGE BODY SEM_PKG_LOG_TOOLS AS
 
-    -- достаём VALUE по ключу из "KEY=VALUE;" строки (без 6-го аргумента REGEXP_SUBSTR)
+    -- GET_VAL извлекает значение из строки вида KEY=VALUE;.
+    -- Возвращает NULL при отсутствии ключа или при пустой строке.
     FUNCTION GET_VAL(p_kv CLOB, p_key VARCHAR2) RETURN VARCHAR2 IS
         v_value VARCHAR2(4000);
     BEGIN
@@ -345,20 +355,18 @@ CREATE OR REPLACE PACKAGE BODY SEM_PKG_LOG_TOOLS AS
             RETURN NULL;
         END IF;
 
-        -- Берём кусок "KEY=VALUE;" и вырезаем только VALUE
         v_value := REGEXP_SUBSTR(p_kv, p_key || '=[^;]*;', 1, 1);
 
         IF v_value IS NULL THEN
             RETURN NULL;
         END IF;
 
-        -- "KEY=VALUE;" -> "VALUE"
         v_value := REGEXP_REPLACE(v_value, '^' || p_key || '=', '');
         v_value := REGEXP_REPLACE(v_value, ';$', '');
         RETURN v_value;
     END;
 
-    -- дальше тело пакета БЕЗ изменений
+    -- VIEW_LOG печатает строки журнала в DBMS_OUTPUT.
     PROCEDURE VIEW_LOG(
         p_from   DATE DEFAULT NULL,
         p_to     DATE DEFAULT NULL,
@@ -383,6 +391,7 @@ CREATE OR REPLACE PACKAGE BODY SEM_PKG_LOG_TOOLS AS
         END LOOP;
     END;
 
+    -- ROLLBACK_ACTION восстанавливает состояние по конкретной записи журнала.
     PROCEDURE ROLLBACK_ACTION(p_log_id NUMBER) IS
         v_entity SEM_ENTITY_LOG.ENTITY_NAME%TYPE;
         v_pk     SEM_ENTITY_LOG.ENTITY_PK%TYPE;
@@ -473,6 +482,7 @@ CREATE OR REPLACE PACKAGE BODY SEM_PKG_LOG_TOOLS AS
             RAISE_APPLICATION_ERROR(-20001, 'Log record not found: '||p_log_id);
     END;
 
+    -- SUMMARY_REPORT строит агрегированную статистику по журналу.
     PROCEDURE SUMMARY_REPORT(
         p_sort_entity BOOLEAN,
         p_sort_op     BOOLEAN,
@@ -525,18 +535,16 @@ SHOW ERRORS;
 
 PROMPT ===== 6) SMOKE TEST (генерим лог + смотрим) =====
 
+-- Демонстрационный прогон CRUD-процедур для наполнения журнала.
 BEGIN
-    -- CUSTOMER: insert/update/delete
     SEM_PKG_CORE_CRUD.ADD_CUSTOMER(10, 'Test Customer', '7000000000');
     SEM_PKG_CORE_CRUD.UPD_CUSTOMER(10, 'Test Customer Updated', '7111111111');
     SEM_PKG_CORE_CRUD.DEL_CUSTOMER(10);
 
-    -- SELLER: insert/update/delete
     SEM_PKG_CORE_CRUD.ADD_SELLER(10, 'Test Seller', 1);
     SEM_PKG_CORE_CRUD.UPD_SELLER(10, 'Test Seller Updated', 2);
     SEM_PKG_CORE_CRUD.DEL_SELLER(10);
 
-    -- SALE: insert/update/delete
     SEM_PKG_CORE_CRUD.ADD_SALE(20, 1, 1, 1, DATE '2024-04-09');
     SEM_PKG_CORE_CRUD.UPD_SALE(20, 2, 2, 2, DATE '2024-04-10');
     SEM_PKG_CORE_CRUD.DEL_SALE(20);
@@ -545,18 +553,13 @@ BEGIN
 END;
 /
 
+-- Пример вывода журнала за последние 30 дней.
 BEGIN
     SEM_PKG_LOG_TOOLS.VIEW_LOG(p_from => SYSDATE - 30);
 END;
 /
 
--- Пример отката: сначала посмотри LOG_ID в выводе, потом раскомменть и подставь:
--- BEGIN
---     SEM_PKG_LOG_TOOLS.ROLLBACK_ACTION(123);
--- END;
--- /
-
--- Пример сводки:
+-- Пример сводки с сортировкой по сущности, операции и количеству.
 BEGIN
     SEM_PKG_LOG_TOOLS.SUMMARY_REPORT(TRUE, TRUE, TRUE);
 END;

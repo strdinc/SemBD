@@ -17,6 +17,7 @@ import {
 } from './api'
 import './App.css'
 
+// Шаблоны для форм CRUD, чтобы быстро сбрасывать значения.
 const emptyCustomer = { id: '', name: '', phone: '' }
 const emptySeller = { id: '', name: '', store_id: '' }
 const emptySale = {
@@ -27,6 +28,7 @@ const emptySale = {
   sale_date: '',
 }
 
+// Параметры подключения по умолчанию (показываются в UI, но скрыты в форме).
 const connectionDefaults = {
   host: '82.179.14.185',
   port: '1521',
@@ -35,12 +37,14 @@ const connectionDefaults = {
   password: 'stud15',
 }
 
+// Основные вкладки приложения.
 const mainTabs = [
   { label: 'SQL запрос', value: 'sql' },
   { label: 'Таблицы', value: 'tables' },
   { label: 'Процедуры', value: 'procedures' },
 ]
 
+// Вкладки раздела «Процедуры» (CRUD и логирование).
 const procedureTabs = [
   { label: 'Покупатели', value: 'customers' },
   { label: 'Продавцы', value: 'sellers' },
@@ -51,12 +55,14 @@ const procedureTabs = [
 ]
 
 function App() {
+  // Состояние подключения к backend API.
   const [connected, setConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [connectionForm, setConnectionForm] = useState(connectionDefaults)
   const [activeTab, setActiveTab] = useState('sql')
   const [procedureTab, setProcedureTab] = useState('customers')
 
+  // Справочники и основные данные.
   const [stores, setStores] = useState([])
   const [customers, setCustomers] = useState([])
   const [sellers, setSellers] = useState([])
@@ -66,11 +72,14 @@ function App() {
   const [tables, setTables] = useState([])
   const [tableView, setTableView] = useState({ name: '', rows: [], columns: [] })
 
+  // Ввод и результат SQL-запроса из интерфейса.
   const [sqlQuery, setSqlQuery] = useState('SELECT * FROM SEM_STORE')
   const [sqlResult, setSqlResult] = useState(null)
 
+  // Состояние всплывающего уведомления (toast/snackbar).
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
 
+  // Формы CRUD и активные действия по каждой сущности.
   const [customerForm, setCustomerForm] = useState(emptyCustomer)
   const [sellerForm, setSellerForm] = useState(emptySeller)
   const [saleForm, setSaleForm] = useState(emptySale)
@@ -78,6 +87,7 @@ function App() {
   const [sellerActionTab, setSellerActionTab] = useState('add')
   const [saleActionTab, setSaleActionTab] = useState('add')
 
+  // Фильтры журнала и сортировка сводки.
   const [logFilters, setLogFilters] = useState({
     from: '',
     to: '',
@@ -89,8 +99,10 @@ function App() {
     sort_op: true,
     sort_count: false,
   })
+  // Выбранная запись журнала для операции отката.
   const [rollbackLogId, setRollbackLogId] = useState(null)
 
+  // Автоматически скрываем уведомление через несколько секунд.
   useEffect(() => {
     if (!snackbar.open) {
       return undefined
@@ -101,13 +113,16 @@ function App() {
     return () => clearTimeout(timer)
   }, [snackbar.open])
 
+  // Показывает всплывающее сообщение для пользователя.
   const showMessage = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity })
   }
 
+  // Приводит ошибку к человекочитаемому виду.
   const getErrorMessage = (error, fallback) =>
     error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback
 
+  // Загружает все справочные данные (магазины, покупатели, продавцы, продажи).
   const refreshAll = async () => {
     try {
       console.log('[refreshAll] start')
@@ -133,6 +148,7 @@ function App() {
     }
   }
 
+  // Загружает журнал операций с фильтрами.
   const loadLogs = async () => {
     try {
       console.log('[logs] load', logFilters)
@@ -150,6 +166,7 @@ function App() {
     }
   }
 
+  // Загружает агрегированную сводку по журналу.
   const loadSummary = async () => {
     try {
       console.log('[summary] load', summarySort)
@@ -166,6 +183,7 @@ function App() {
     }
   }
 
+  // Запрашивает список таблиц схемы.
   const loadTables = async () => {
     try {
       const response = await fetchTables()
@@ -176,6 +194,7 @@ function App() {
     }
   }
 
+  // При подключении сразу загружаем все необходимые данные.
   useEffect(() => {
     if (!connected) {
       return
@@ -186,6 +205,7 @@ function App() {
     loadTables()
   }, [connected])
 
+  // Проверяет доступность сервера и переключает UI в состояние «подключено».
   const handleConnect = async () => {
     setConnecting(true)
     try {
@@ -201,6 +221,7 @@ function App() {
     }
   }
 
+  // Выполняет CRUD-операции над покупателями через API.
   const handleCustomerAction = async (action) => {
     try {
       console.log('[customers] action', action, customerForm)
@@ -214,6 +235,7 @@ function App() {
     }
   }
 
+  // Выполняет CRUD-операции над продавцами через API.
   const handleSellerAction = async (action) => {
     try {
       console.log('[sellers] action', action, sellerForm)
@@ -232,6 +254,7 @@ function App() {
     }
   }
 
+  // Выполняет CRUD-операции над продажами через API.
   const handleSaleAction = async (action) => {
     try {
       console.log('[sales] action', action, saleForm)
@@ -252,6 +275,7 @@ function App() {
     }
   }
 
+  // Выполняет откат записи из журнала.
   const handleRollback = async () => {
     if (!rollbackLogId) {
       showMessage('Выберите лог для отката', 'warning')
@@ -271,6 +295,7 @@ function App() {
     }
   }
 
+  // Запускает произвольный SQL-запрос из интерфейса.
   const handleSqlRun = async () => {
     if (!sqlQuery.trim()) {
       showMessage('Введите SQL запрос', 'warning')
@@ -286,6 +311,7 @@ function App() {
     }
   }
 
+  // Запрашивает данные выбранной таблицы и подготавливает отображение.
   const handleTableOpen = async (tableName) => {
     try {
       const response = await fetchTableData(tableName)
@@ -298,6 +324,7 @@ function App() {
     }
   }
 
+  // Готовим подписи для селекта с продажами (ID + магазин + дата).
   const saleOptions = useMemo(
     () =>
       sales.map((sale) => ({
@@ -307,6 +334,7 @@ function App() {
     [sales]
   )
 
+  // Данные SQL-вывода для таблицы результата.
   const sqlColumns = sqlResult?.columns || []
   const sqlRows = sqlResult?.rows || []
 
@@ -329,6 +357,7 @@ function App() {
         </div>
       </header>
 
+      {/* Карточка подключения отображается до успешного health-check. */}
       {!connected ? (
         <section className="section-card connection-card">
           <div className="section-header">
@@ -405,10 +434,11 @@ function App() {
                 {connecting ? 'Подключение...' : 'Подключиться'}
               </button>
               <p className="hint">Используются базовые параметры подключения по умолчанию.</p>
-            </div>
+          </div>
         </section>
       ) : (
         <>
+          {/* Навигация по основным разделам: SQL, таблицы, процедуры. */}
           <div className="tabs">
             {mainTabs.map((tab) => (
               <button
@@ -459,6 +489,7 @@ function App() {
                           : `Запрос выполнен. Затронуто строк: ${sqlResult.row_count ?? 0}`}
                       </pre>
                       {sqlResult.type === 'select' && sqlRows.length > 0 && (
+                        /* Таблица результата SQL-запроса. */
                         <div className="table-card">
                           <div
                             className="table-header"
